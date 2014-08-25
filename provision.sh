@@ -20,6 +20,20 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="provision ssh keys for root"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  if ! [ -d /vagrant/ssh ]; then
+    mkdir /vagrant/ssh
+    ssh-keygen -t dsa -N "" -C "root for oar-vagrant" -f /vagrant/ssh/id_dsa
+  fi
+  install -d -m 0700 /root/.ssh
+  cat /vagrant/ssh/id_dsa.pub >> /root/.ssh/authorized_keys
+  cp /vagrant/ssh/id_dsa.pub \
+     /vagrant/ssh/id_dsa \
+     /root/.ssh/
+  touch /tmp/stamp.${stamp// /_}
+)
+
 stamp="provision repo epel"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -182,4 +196,3 @@ case $BOX in
     exit 1
   ;;
 esac
-

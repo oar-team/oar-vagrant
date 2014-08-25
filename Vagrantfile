@@ -7,6 +7,7 @@ HOSTS_COUNT = 1
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oar-team/centos-6.5"
+  config.vm.synced_folder ".", "/vagrant", create: true
   config.vm.define "server", primary: true do |m|
     m.vm.hostname = "server"
     m.vm.network :private_network, ip: "192.168.33.10"
