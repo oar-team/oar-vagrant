@@ -13,9 +13,6 @@ global:
   ## User varibales : used by the recipe
   user_name: vagrant
 
-  install_chef: false
-  install_puppet: false
-
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - "@base"

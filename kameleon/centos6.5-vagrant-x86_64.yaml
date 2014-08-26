@@ -17,9 +17,6 @@ global:
   selinux: disabled  ## Can take one of these three values: enforcing, permissive or disabled
   selinuxtype: targeted  ## Possible values are: strict, targeted
 
-  install_chef: false
-  install_puppet: false
-
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - "@base"
