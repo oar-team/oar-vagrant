@@ -6,15 +6,14 @@ VAGRANTFILE_API_VERSION = "2"
 HOSTS_COUNT = 1
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "oar-team/centos-6.5"
   config.vm.define "server", primary: true do |m|
-    m.vm.box = "chef/centos-6.5"
     m.vm.hostname = "server"
     m.vm.network :private_network, ip: "192.168.33.10"
     m.ssh.forward_agent = true
     m.vm.provision :shell, path: "provision.sh", args: "server #{HOSTS_COUNT}", privileged: true
   end
   config.vm.define "frontend" do |m|
-    m.vm.box = "chef/centos-6.5"
     m.vm.hostname = "frontend"
     m.vm.network :private_network, ip: "192.168.33.11"
     m.ssh.forward_agent = true
@@ -25,7 +24,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
   (1..HOSTS_COUNT).each do |i|
     config.vm.define "node-#{i}" do |m|
-      m.vm.box = "chef/centos-6.5"
       m.vm.hostname = "node-#{i}"
       m.vm.network :private_network, ip: "192.168.33.#{i+100}"
       m.ssh.forward_agent = true
