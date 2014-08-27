@@ -60,7 +60,7 @@ if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
     touch /tmp/stamp.${stamp// /_}
   )
 fi
-  
+
 case $BOX in
   server)
     stamp="provision postgresql server"
@@ -120,6 +120,13 @@ case $BOX in
     )
   ;;
   frontend)
+    stamp="provision yum install ypserv yp-tools"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y ypserv yp-tools
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision yum oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
