@@ -48,7 +48,7 @@ if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
     for i in {1..3}; do
       umount /home/user$i
       adduser -M -u $((500+$i)) -N user$i
-      mount -t vboxsf -o uid=$(id -u user$i),gid=$(id -g user$i) /home/user$i /home/user$i
+      mount.vboxsf -o uid=$(id -u user$i),gid=$(id -g user$i) home_user$i /home/user$i
     done
     touch /tmp/stamp.${stamp// /_}
   )
