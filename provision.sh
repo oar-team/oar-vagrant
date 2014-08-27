@@ -55,6 +55,13 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="provision yum install man"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  yum install -y man
+  touch /tmp/stamp.${stamp// /_}
+)
+
 #if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
 #  stamp="provision users"
 #  [ -e /tmp/stamp.${stamp// /_} ] || (
@@ -127,6 +134,13 @@ case $BOX in
     )
   ;;
   frontend)
+    stamp="provision yum install ypserv yp-tools"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y ypserv yp-tools
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision yum oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
