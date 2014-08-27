@@ -28,9 +28,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       m.vm.hostname = "node-#{i}"
       m.vm.network :private_network, ip: "192.168.33.#{i+100}"
       m.ssh.forward_agent = true
-      (1..3).each do |u|
-        m.vm.synced_folder "user#{u}", "/home/user#{u}", create: true
-      end
+#      (1..3).each do |u|
+#        m.vm.synced_folder "user#{u}", "/home/user#{u}", create: true
+#      end
       m.vm.provision :shell, path: "provision.sh", args: "nodes #{HOSTS_COUNT}", privileged: true
     end
   end

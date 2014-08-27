@@ -20,19 +20,19 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision ssh keys for root"
-[ -e /tmp/stamp.${stamp// /_} ] || (
-  if ! [ -d /vagrant/ssh ]; then
-    mkdir /vagrant/ssh
-    ssh-keygen -t dsa -N "" -C "root for oar-vagrant" -f /vagrant/ssh/id_dsa
-  fi
-  install -d -m 0700 /root/.ssh
-  cat /vagrant/ssh/id_dsa.pub >> /root/.ssh/authorized_keys
-  cp /vagrant/ssh/id_dsa.pub \
-     /vagrant/ssh/id_dsa \
-     /root/.ssh/
-  touch /tmp/stamp.${stamp// /_}
-)
+#stamp="provision ssh keys for root"
+#[ -e /tmp/stamp.${stamp// /_} ] || (
+#  if ! [ -d /vagrant/ssh ]; then
+#    mkdir /vagrant/ssh
+#    ssh-keygen -t dsa -N "" -C "root for oar-vagrant" -f /vagrant/ssh/id_dsa
+#  fi
+#  install -d -m 0700 /root/.ssh
+#  cat /vagrant/ssh/id_dsa.pub >> /root/.ssh/authorized_keys
+#  cp /vagrant/ssh/id_dsa.pub \
+#     /vagrant/ssh/id_dsa \
+#     /root/.ssh/
+#  touch /tmp/stamp.${stamp// /_}
+#)
 
 stamp="provision repo epel"
 [ -e /tmp/stamp.${stamp// /_} ] || (
@@ -55,18 +55,18 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
-if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
-  stamp="provision users"
-  [ -e /tmp/stamp.${stamp// /_} ] || (
-    echo -ne "##\n## $stamp\n##\n" ; set -x
-    for i in {1..3}; do
-      umount /home/user$i
-      adduser -M -u $((500+$i)) -N user$i
-      mount -t vboxsf -o uid=$(id -u user$i),gid=$(id -g user$i) /home/user$i /home/user$i
-    done
-    touch /tmp/stamp.${stamp// /_}
-  )
-fi
+#if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
+#  stamp="provision users"
+#  [ -e /tmp/stamp.${stamp// /_} ] || (
+#    echo -ne "##\n## $stamp\n##\n" ; set -x
+#    for i in {1..3}; do
+#      umount /home/user$i
+#      adduser -M -u $((500+$i)) -N user$i
+#      mount -t vboxsf -o uid=$(id -u user$i),gid=$(id -g user$i) /home/user$i /home/user$i
+#    done
+#    touch /tmp/stamp.${stamp// /_}
+#  )
+#fi
   
 case $BOX in
   server)
