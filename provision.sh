@@ -215,11 +215,11 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
-          -e "s/^\(username.*\)oar.*/\1oar_ro/" \
-          -e "s/^\(password.*\)oar.*/\1oar_ro/" \
-          -e "s/^\(dbtype.*\)mysql.*/\1psql/" \
-          -e "s/^\(dbport.*\)3306.*/\15432/" \
-          -e "s/^\(hostname.*\)localhost.*/\1server/" \
+          -e "s/^\(username =\).*/\1 oar_ro/" \
+          -e "s/^\(password =\).*/\1 oar_ro/" \
+          -e "s/^\(dbtype =\).*/\1 psql/" \
+          -e "s/^\(dbport =\).*/\1 5432/" \
+          -e "s/^\(hostname =\).*/\1 server/" \
           /etc/oar/monika.conf
       touch /tmp/stamp.${stamp// /_}
     )
