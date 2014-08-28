@@ -59,7 +59,11 @@ case $BOX in
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       sed -i -e "s/\(host \+all \+all \+127.0.0.1\/32 \+\)ident/\1md5/" \
              -e "s/\(host \+all \+all \+::1\/128 \+\)ident/\1md5/" $PGSQL_CONFDIR/pg_hba.conf
-      echo "host oar all 192.168.33.0/24 md5" >> $PGSQL_CONFDIR/pg_hba.conf
+      cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
+#Access to OAR database
+host oar all 192.168.33.0/24 md5 
+EOF
+      chkconfig postgresql on
       service postgresql restart
       touch /tmp/stamp.${stamp// /_}
     )
