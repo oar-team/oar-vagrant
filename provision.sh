@@ -280,7 +280,7 @@ EOF
     stamp="setup ssh for oar user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/ --exclude "id_rsa"
+      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
       touch /tmp/stamp.${stamp// /_}
     )
 
