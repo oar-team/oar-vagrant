@@ -195,6 +195,13 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="provision setup oar user"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/ --exclude "id_rsa"
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision install httpd"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -269,6 +276,14 @@ EOF
       yum install -y --enablerepo=OAR-testing oar-node
       touch /tmp/stamp.${stamp// /_}
     )
+
+    stamp="provision setup oar user"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/ --exclude "id_rsa"
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   *)
     echo "Error: unknown BOX" 2>&1
