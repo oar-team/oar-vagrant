@@ -107,6 +107,14 @@ case $BOX in
     )
   ;;
   frontend)
+    stamp="provision users"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      for i in {1..3}; do
+        adduser -N user$i
+      done
+      touch /tmp/stamp.${stamp// /_}
+    )
     stamp="provision yum install ypserv yp-tools ypbind"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
