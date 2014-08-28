@@ -119,6 +119,16 @@ EOF
       done
       touch /tmp/stamp.${stamp// /_}
     )
+
+    stamp="provision configure NFS server"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      chkconfig nfs on
+      /etc/init.d/nfs start
+      echo "/home/ 192.168.33.0/24(rw,no_root_squash)" > /etc/exports
+      exportfs -rv
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision yum install ypserv yp-tools ypbind"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -211,6 +221,13 @@ EOF
     )
   ;;
   nodes)
+    stamp="provision mount NFS home"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo "192.168.33.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      mount /home
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision yum install ypbind"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
