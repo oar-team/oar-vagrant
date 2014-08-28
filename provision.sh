@@ -48,19 +48,6 @@ stamp="provision yum install man"
   touch /tmp/stamp.${stamp// /_}
 )
 
-if [ $BOX == "frontend" -o $BOX == "nodes" ]; then
-  stamp="provision users"
-  [ -e /tmp/stamp.${stamp// /_} ] || (
-    echo -ne "##\n## $stamp\n##\n" ; set -x
-    for i in {1..3}; do
-      umount /home/user$i
-      adduser -M -u $((500+$i)) -N user$i
-      mount.vboxsf -o uid=$(id -u user$i),gid=$(id -g user$i) home_user$i /home/user$i
-    done
-    touch /tmp/stamp.${stamp// /_}
-  )
-fi
-
 case $BOX in
   server)
     stamp="provision postgresql server"
