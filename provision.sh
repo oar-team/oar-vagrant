@@ -109,6 +109,14 @@ EOF
       . /tmp/oar_create_resources
       touch /tmp/stamp.${stamp// /_}
     )
+
+    stamp="start oar-server"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      service oar-server start
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   frontend)
     stamp="create some users"
@@ -281,6 +289,13 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="start oar-node"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      service oar-node start
       touch /tmp/stamp.${stamp// /_}
     )
 
