@@ -195,6 +195,15 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="provision install httpd"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install httpd
+      chkconfig httpd on
+      service httpd start
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision monika conf"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -219,6 +228,7 @@ EOF
           /etc/oar/drawgantt-config.inc.php
       touch /tmp/stamp.${stamp// /_}
     )
+
   ;;
   nodes)
     stamp="provision mount NFS home"
