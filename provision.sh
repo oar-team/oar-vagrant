@@ -20,14 +20,14 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision repo epel"
+stamp="provision EPEL repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision repo oar"
+stamp="provision OAR-Testing repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   cat <<'EOF' | tee /etc/yum.repos.d/OAR-testing.repo
@@ -41,7 +41,7 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision yum install man"
+stamp="install man package"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   yum install -y man
@@ -50,7 +50,7 @@ stamp="provision yum install man"
 
 case $BOX in
   server)
-    stamp="provision postgresql server"
+    stamp="install and configure postgresql server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y postgresql-server
@@ -68,14 +68,14 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum oar-server"
+    stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y --enablerepo=OAR-testing oar-server oar-server-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision oar conf"
+    stamp="set oar config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -94,14 +94,14 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision oar db"
+    stamp="create oar db"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       oar-database --create --db-is-local --db-admin-user root
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision add resources"
+    stamp="create oar resources"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       oar_resources_add -H $HOSTS_COUNT -C 1 -c 1 -t 1 | tee /tmp/oar_create_resources
@@ -111,7 +111,7 @@ EOF
     )
   ;;
   frontend)
-    stamp="provision users"
+    stamp="create some users"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
@@ -120,16 +120,16 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision configure NFS server"
+    stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       chkconfig nfs on
-      /etc/init.d/nfs start
+      service nfs start
       echo "/home/ 192.168.33.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum install ypserv yp-tools ypbind"
+    stamp="install NIS server packages"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y ypserv yp-tools ypbind
@@ -137,7 +137,7 @@ EOF
     )
 
 
-    stamp="provision configure NIS server"
+    stamp="configure NIS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
       echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
@@ -164,21 +164,21 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum oar-user"
+    stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y --enablerepo=OAR-testing oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum oar-web-status"
+    stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y --enablerepo=OAR-testing oar-web-status oar-web-status-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision oar conf"
+    stamp="set oar config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -195,14 +195,14 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision setup oar user"
+    stamp="setup ssh for oar user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/ --exclude "id_rsa"
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision install httpd"
+    stamp="install httpd"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install httpd
@@ -211,7 +211,7 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision monika conf"
+    stamp="set monika config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -224,7 +224,7 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision drawgantt-svg conf"
+    stamp="set drawgantt-svg config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -238,21 +238,21 @@ EOF
 
   ;;
   nodes)
-    stamp="provision mount NFS home"
+    stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo "192.168.33.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum install ypbind"
+    stamp="install NIS"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y ypbind
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision configure NIS server"
+    stamp="configure NIS client"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
       echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
@@ -270,14 +270,14 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision yum oar-node"
+    stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y --enablerepo=OAR-testing oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="provision setup oar user"
+    stamp="setup ssh for oar user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/ --exclude "id_rsa"
