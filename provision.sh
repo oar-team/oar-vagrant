@@ -120,10 +120,38 @@ case $BOX in
     )
   ;;
   frontend)
-    stamp="provision yum install ypserv yp-tools"
+    stamp="provision yum install ypserv yp-tools ypbind"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y ypserv yp-tools
+      yum install -y ypserv yp-tools ypbind
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+
+    stamp="provision configure NIS server"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      NISDOMAIN="MyNISDomain"
+      echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
+      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
+      domainname $NISDOMAIN
+      ypdomainname $NISDOMAIN
+      cat <<EOF > /var/yp/securenets
+host 127.0.0.1
+255.255.255.0 192.168.33.0
+EOF
+      chkconfig ypserv on
+      service rpcbind restart
+      service ypserv start
+      /usr/lib64/yp/ypinit -m < /dev/null
+      chkconfig ypbind on
+      chkconfig yppasswdd on
+      service ypbind start
+      service yppasswdd start
+      sed -i \
+          -e "s/^\(passwd:     files\)/\1 nis/" \
+          -e "s/^\(shadow:     files\)/\1 nis/" \
+          -e "s/^\(group:     files\)/\1 nis/" \
+          /etc/nsswitch.conf
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -184,6 +212,31 @@ case $BOX in
     )
   ;;
   nodes)
+    stamp="provision yum install ypbind"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y ypbind
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="provision configure NIS server"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      NISDOMAIN="MyNISDomain"
+      echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
+      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
+      domainname $NISDOMAIN
+      ypdomainname $NISDOMAIN
+      service rpcbind restart
+      chkconfig ypbind on
+      service ypbind start
+      sed -i \
+          -e "s/^\(passwd:     files\)/\1 nis/" \
+          -e "s/^\(shadow:     files\)/\1 nis/" \
+          -e "s/^\(group:     files\)/\1 nis/" \
+          /etc/nsswitch.conf
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="provision yum oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
