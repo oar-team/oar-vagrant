@@ -124,6 +124,37 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
         adduser -N user$i
+        echo "user$i:vagrant" | chpasswd 
+        cp -a /home/vagrant/.ssh /home/user$i/
+        cat >> /home/user$i/.bashrc <<'EOF'
+function _oarsh_complete_() {
+  if [ -n "$OAR_NODEFILE" -a "$COMP_CWORD" -eq 1 ]; then
+    local word=${comp_words[comp_cword]}
+    local list=$(cat $OAR_NODEFILE | uniq | tr '\n' ' ')
+    COMPREPLY=($(compgen -W "$list" -- "${word}"))
+  fi
+}
+complete -o default -F _oarsh_complete_ oarsh
+
+if [ "$PS1" ]; then
+   __oar_ps1_remaining_time(){
+      if [ -n "$OAR_JOB_WALLTIME_SECONDS" -a -n "$OAR_NODE_FILE" -a -r "$OAR_NODE_FILE" ]; then
+         DATE_NOW=$(date +%s)
+         DATE_JOB_START=$(stat -c %Y $OAR_NODE_FILE)
+         DATE_TMP=$OAR_JOB_WALLTIME_SECONDS
+         ((DATE_TMP = (DATE_TMP - DATE_NOW + DATE_JOB_START) / 60))
+         echo -n "$DATE_TMP"
+      fi
+   }
+   PS1='[\u@\h|\W]$([ -n "$OAR_NODE_FILE" ] && echo -n "(\[\e[1;32m\]$OAR_JOB_ID\[\e[0m\]-->\[\e[1;34m\]$(__oar_ps1_remaining_time)mn\[\e[0m\])")\$ '
+   if [ -n "$OAR_NODE_FILE" ]; then
+      echo "[OAR] OAR_JOB_ID=$OAR_JOB_ID"
+      echo "[OAR] Your nodes are:"
+      sort $OAR_NODE_FILE | uniq -c | awk '{printf("      %s*%d", $2, $1)}END{printf("\n")}' | sed -e 's/,$//'
+   fi
+fi
+EOF
+        chown user$i:users /home/user$i -R
       done
       touch /tmp/stamp.${stamp// /_}
     )
