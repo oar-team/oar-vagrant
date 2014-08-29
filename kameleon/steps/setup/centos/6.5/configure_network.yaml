@@ -19,6 +19,7 @@
     - |
       DEVICE="eth0"
       BOOTPROTO="dhcp"
+      HOSTNAME="$$hostname"
       IPV6INIT="yes"
       NM_CONTROLLED="yes"
       ONBOOT="yes"
