@@ -5,6 +5,7 @@ set -e
 export BOX=$1
 export HOSTS_COUNT=$2
 export DEBIAN_FRONTEND=noninteractive
+export PGSQL_VERSION=9.1
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -21,26 +22,12 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision EPEL repo"
-[ -e /tmp/stamp.${stamp// /_} ] || (
-  echo -ne "##\n## $stamp\n##\n" ; set -x
-  rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-  touch /tmp/stamp.${stamp// /_}
-)
-
 stamp="provision OAR-Testing repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   # Add the OAR testing repository
-  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-proposed-updates main" > /etc/apt/sources.list.d/oar.list
+  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
   curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-  touch /tmp/stamp.${stamp// /_}
-)
-
-stamp="install man package"
-[ -e /tmp/stamp.${stamp// /_} ] || (
-  echo -ne "##\n## $stamp\n##\n" ; set -x
-  apt-get install -y --force-yes man
   touch /tmp/stamp.${stamp// /_}
 )
 
@@ -49,17 +36,13 @@ case $BOX in
     stamp="install and configure postgresql server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y postgresql-server
-      service postgresql initdb
-      PGSQL_CONFDIR=/var/lib/pgsql/data
+      apt-get install -y protgresql-$PGSQL_VERSION
+      PGSQL_CONFDIR=/etc/postgresql/$PGSQL_VERSION/main
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
-      sed -i -e "s/\(host \+all \+all \+127.0.0.1\/32 \+\)ident/\1md5/" \
-             -e "s/\(host \+all \+all \+::1\/128 \+\)ident/\1md5/" $PGSQL_CONFDIR/pg_hba.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
 #Access to OAR database
 host oar all 192.168.34.0/24 md5
 EOF
-      chkconfig postgresql on
       service postgresql restart
       touch /tmp/stamp.${stamp// /_}
     )
@@ -119,15 +102,14 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
-        adduser -N user$i
+        useradd -N user$i
       done
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
-      chkconfig nfs on
-      service nfs start
+      apt-get install -y nfs-kernel-server
       echo "/home/ 192.168.34.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
@@ -136,49 +118,44 @@ EOF
     stamp="install NIS server packages"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y ypserv yp-tools ypbind
       touch /tmp/stamp.${stamp// /_}
     )
 
 
-    stamp="configure NIS server"
+    stamp="install and configure NIS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
+      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      apt-get install -y nis
+      sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
       echo "domain $NISDOMAIN server 192.168.34.11" >> /etc/yp.conf
-      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
-      domainname $NISDOMAIN
-      ypdomainname $NISDOMAIN
       cat <<EOF > /var/yp/securenets
 host 127.0.0.1
 255.255.255.0 192.168.34.0
 EOF
-      chkconfig ypserv on
-      service rpcbind restart
-      service ypserv start
-      /usr/lib64/yp/ypinit -m < /dev/null
-      chkconfig ypbind on
-      chkconfig yppasswdd on
-      service ypbind start
-      service yppasswdd start
-      sed -i \
-          -e "s/^\(passwd:     files\)/\1 nis/" \
-          -e "s/^\(shadow:     files\)/\1 nis/" \
-          -e "s/^\(group:     files\)/\1 nis/" \
-          /etc/nsswitch.conf
+      /usr/lib/yp/ypinit -m < /dev/null
+      echo "+::::::" > /etc/passwd
+      echo "+:::" > /etc/group
+      service nis restart
+#      sed -i \
+#          -e "s/^\(passwd:     files\)/\1 nis/" \
+#          -e "s/^\(shadow:     files\)/\1 nis/" \
+#          -e "s/^\(group:     files\)/\1 nis/" \
+#          /etc/nsswitch.conf
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-user oar-user-pgsql
+      apt-get install -y oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-web-status oar-web-status-pgsql
+      apt-get install -y oar-web-status oar-web-status-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -209,9 +186,6 @@ EOF
     stamp="install httpd"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install httpd
-      chkconfig httpd on
-      service httpd start
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -249,35 +223,22 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install NIS"
+    stamp="install and configure NIS"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y ypbind
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="configure NIS client"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
+      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      apt-get install -y nis
       echo "domain $NISDOMAIN server 192.168.34.11" >> /etc/yp.conf
-      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
-      domainname $NISDOMAIN
-      ypdomainname $NISDOMAIN
-      service rpcbind restart
-      chkconfig ypbind on
-      service ypbind start
-      sed -i \
-          -e "s/^\(passwd:     files\)/\1 nis/" \
-          -e "s/^\(shadow:     files\)/\1 nis/" \
-          -e "s/^\(group:     files\)/\1 nis/" \
-          /etc/nsswitch.conf
+      echo "+::::::" > /etc/passwd
+      echo "+:::" > /etc/group
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-node
+      apt-get install -y oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
