@@ -22,12 +22,12 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR-Testing repo"
+stamp="provision OAR unstable repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  # Add the OAR testing repository
   echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
   curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+  apt-get update
   touch /tmp/stamp.${stamp// /_}
 )
 
