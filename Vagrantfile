@@ -1,1 +1,0 @@
-centos_6_rpm/Vagrantfile
