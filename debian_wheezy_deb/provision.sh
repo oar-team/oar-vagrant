@@ -174,7 +174,7 @@ EOF
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-web-status oar-web-status-pgsql
+      apt-get install -y oar-web-status libdbd-pg-perl php5-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -199,12 +199,6 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="install httpd"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
       touch /tmp/stamp.${stamp// /_}
     )
 
