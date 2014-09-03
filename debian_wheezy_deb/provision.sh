@@ -36,7 +36,7 @@ case $BOX in
     stamp="install and configure postgresql server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y protgresql-$PGSQL_VERSION
+      apt-get install -y postgresql-$PGSQL_VERSION
       PGSQL_CONFDIR=/etc/postgresql/$PGSQL_VERSION/main
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
