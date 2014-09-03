@@ -48,7 +48,7 @@ global:
     - $$distrib
 
   # Apt options
-  apt_repository: http://ftp.debian.org/debian/
+  apt_repository: http://ftp.fr.debian.org/debian/
   apt_enable_contrib: true
   apt_enable_nonfree: true
 
@@ -72,7 +72,7 @@ bootstrap:
     - packages: parted e2fsprogs debootstrap extlinux
   - initialize_disk
   - debootstrap:
-    - include_pkg: > 
+    - include_pkg: >
         apt-utils ca-certificates locales less linux-image-$$kernel_arch
         isc-dhcp-client ifupdown iptables iputils-ping iproute pciutils
         psmisc acpid acpi-support-base openssh-server sysvinit
