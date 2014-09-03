@@ -262,7 +262,20 @@ EOF
     stamp="start oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      service oar-node start
+      cat >> /etc/default/oar-node <<'EOF'
+OAR_NODE_NAME=$(hostname -f)
+OARSERVER="server"
+start_oar_node() {
+    test -n "$OARSERVER" || exit 0
+    ssh $OARSERVER oarnodesetting -s Alive -h $OAR_NODE_NAME
+}
+
+stop_oar_node() {
+    test -n "$OARSERVER" || exit 0
+    ssh $OARSERVER oarnodesetting -s Absent -h $OAR_NODE_NAME
+}
+EOF
+      service oar-node restart
       touch /tmp/stamp.${stamp// /_}
     )
 
