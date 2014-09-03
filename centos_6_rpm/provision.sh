@@ -161,6 +161,7 @@ EOF
 
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
       chkconfig nfs on
       service nfs start
       echo "/home/ 192.168.33.0/24(rw,no_root_squash)" > /etc/exports
