@@ -140,39 +140,27 @@ EOF
 
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
-      echo "/home/ 192.168.34.0/24(rw,no_root_squash)" > /etc/exports
+      echo "/home/ 192.168.34.0/24(rw,no_subtree_check)" > /etc/exports
+      service nfs-kernel-server restart
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install NIS server packages"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-
     stamp="install and configure NIS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
+      chmod +x /usr/sbin/policy-rc.d
       apt-get install -y nis
+      rm /usr/sbin/policy-rc.d
+      nisdomainname $NISDOMAIN
       sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
-      echo "domain $NISDOMAIN server 192.168.34.11" >> /etc/yp.conf
-      cat <<EOF > /var/yp/securenets
-host 127.0.0.1
-255.255.255.0 192.168.34.0
-EOF
-      /usr/lib/yp/ypinit -m < /dev/null
-      echo "+::::::" > /etc/passwd
-      echo "+:::" > /etc/group
+      /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
       service nis restart
-#      sed -i \
-#          -e "s/^\(passwd:     files\)/\1 nis/" \
-#          -e "s/^\(shadow:     files\)/\1 nis/" \
-#          -e "s/^\(group:     files\)/\1 nis/" \
-#          /etc/nsswitch.conf
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -260,9 +248,6 @@ EOF
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
       apt-get install -y nis
-      echo "domain $NISDOMAIN server 192.168.34.11" >> /etc/yp.conf
-      echo "+::::::" > /etc/passwd
-      echo "+:::" > /etc/group
       touch /tmp/stamp.${stamp// /_}
     )
 

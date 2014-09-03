@@ -180,7 +180,6 @@ EOF
     stamp="configure NIS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
-      echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
@@ -295,7 +294,6 @@ EOF
     stamp="configure NIS client"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
-      echo "domain $NISDOMAIN server 192.168.33.11" >> /etc/yp.conf
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
