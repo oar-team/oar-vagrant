@@ -196,13 +196,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="setup ssh for oar user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="set monika config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -239,6 +232,13 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="setup ssh for oar user"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   nodes)
     stamp="mount NFS home"
@@ -264,13 +264,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="setup ssh for oar user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="start oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -288,6 +281,13 @@ stop_oar_node() {
 }
 EOF
       service oar-node restart
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="setup ssh for oar user"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
       touch /tmp/stamp.${stamp// /_}
     )
 
