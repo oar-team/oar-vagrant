@@ -4,7 +4,6 @@ set -e
 
 export BOX=$1
 export HOSTS_COUNT=$2
-export NETWORK="192.168.34"
 export DEBIAN_FRONTEND=noninteractive
 export PGSQL_VERSION=9.1
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
@@ -15,10 +14,10 @@ fi
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo $NETWORK.10 server >> /etc/hosts
-  echo $NETWORK.11 frontend >> /etc/hosts
+  echo 192.168.34.10 server >> /etc/hosts
+  echo 192.168.34.11 frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts
+    echo 192.168.34.$((100+i)) node-$i >> /etc/hosts
   done
   touch /tmp/stamp.${stamp// /_}
 )
@@ -42,7 +41,7 @@ case $BOX in
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
 #Access to OAR database
-host oar all $NETWORK.0/24 md5
+host oar all 192.168.34.0/24 md5
 EOF
       service postgresql restart
       touch /tmp/stamp.${stamp// /_}
@@ -143,13 +142,13 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
-      echo "/home/ $NETWORK.0/24(rw,no_subtree_check)" > /etc/exports
+      echo "/home/ 192.168.34.0/24(rw,no_subtree_check)" > /etc/exports
       service nfs-kernel-server restart
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install and configure NIS server and client"
+    stamp="install and configure NIS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
@@ -228,16 +227,26 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="install restful api"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      apt-get install -y oar-restful-api libapache2-mod-fastcgi oidentd
+      a2enmod ident
+      a2enmod rewrite
+      service apache2 restart
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo "$NETWORK.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      echo "192.168.34.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install and configure NIS client"
+    stamp="install and configure NIS"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
