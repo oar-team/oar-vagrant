@@ -264,6 +264,18 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="install restful api"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y --enablerepo=OAR-testing oar-restful-api
+      yum install -y perl-YAML oidentd
+      sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
+      sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
+      service oidentd start
+      service httpd restart
+     touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   nodes)
     stamp="mount NFS home"
