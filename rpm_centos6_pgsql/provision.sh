@@ -4,6 +4,7 @@ set -e
 
 export BOX=$1
 export HOSTS_COUNT=$2
+export NETWORK="192.168.33"
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -12,10 +13,10 @@ fi
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo 192.168.33.10 server >> /etc/hosts 
-  echo 192.168.33.11 frontend >> /etc/hosts 
+  echo $NETWORK.10 server >> /etc/hosts 
+  echo $NETWORK.11 frontend >> /etc/hosts 
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo 192.168.33.$((100+i)) node-$i >> /etc/hosts 
+    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts 
   done
   touch /tmp/stamp.${stamp// /_}
 )
@@ -41,13 +42,6 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="install man package"
-[ -e /tmp/stamp.${stamp// /_} ] || (
-  echo -ne "##\n## $stamp\n##\n" ; set -x
-  yum install -y man
-  touch /tmp/stamp.${stamp// /_}
-)
-
 case $BOX in
   server)
     stamp="install and configure postgresql server"
@@ -61,7 +55,7 @@ case $BOX in
              -e "s/\(host \+all \+all \+::1\/128 \+\)ident/\1md5/" $PGSQL_CONFDIR/pg_hba.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
 #Access to OAR database
-host oar all 192.168.33.0/24 md5 
+host oar all $NETWORK.0/24 md5 
 EOF
       chkconfig postgresql on
       service postgresql restart
@@ -164,21 +158,14 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       chkconfig nfs on
       service nfs start
-      echo "/home/ 192.168.33.0/24(rw,no_root_squash)" > /etc/exports
+      echo "/home/ $NETWORK.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install NIS server packages"
+    stamp="install and configure NIS server and client"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y ypserv yp-tools ypbind
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-
-    stamp="configure NIS server"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
@@ -186,7 +173,7 @@ EOF
       echo "broadcast" >> /etc/yp.conf
       cat <<EOF > /var/yp/securenets
 host 127.0.0.1
-255.255.255.0 192.168.33.0
+255.255.255.0 $NETWORK.0
 EOF
       chkconfig ypserv on
       service rpcbind restart
@@ -280,20 +267,15 @@ EOF
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo "192.168.33.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      echo "$NETWORK.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install NIS"
+    stamp="install and configure NIS client"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y ypbind
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="configure NIS client"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
       NISDOMAIN="MyNISDomain"
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
