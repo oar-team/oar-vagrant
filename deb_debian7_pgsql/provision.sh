@@ -231,9 +231,10 @@ EOF
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-restful-api libapache2-mod-fastcgi oidentd
+      apt-get install -y oar-restful-api libapache2-mod-fastcgi oidentd 
       a2enmod ident
       a2enmod rewrite
+      a2enmod headers
       service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
