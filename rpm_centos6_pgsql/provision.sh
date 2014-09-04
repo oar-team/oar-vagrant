@@ -167,6 +167,7 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
+      yum install -y ypserv yp-tools ypbind
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
@@ -275,8 +276,8 @@ EOF
     stamp="install and configure NIS client"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y ypbind
       NISDOMAIN="MyNISDomain"
+      yum install -y ypbind
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
