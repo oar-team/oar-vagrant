@@ -183,6 +183,7 @@ EOF
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
+      echo "broadcast" >> /etc/yp.conf
       cat <<EOF > /var/yp/securenets
 host 127.0.0.1
 255.255.255.0 192.168.33.0
@@ -297,6 +298,7 @@ EOF
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
+      echo "broadcast" >> /etc/yp.conf
       service rpcbind restart
       chkconfig ypbind on
       service ypbind start
