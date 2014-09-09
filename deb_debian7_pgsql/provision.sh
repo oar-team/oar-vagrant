@@ -254,6 +254,7 @@ EOF
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
       apt-get install -y nis
+      echo "+::::::" >> /etc/passwd
       touch /tmp/stamp.${stamp// /_}
     )
 
