@@ -1,0 +1,35 @@
+#!/bin/bash
+VBOXMANAGE=/usr/bin/VBoxManage
+LOGFILE=/tmp/vagrant/vboxmanage.$(date +%s)
+mkdir -p ${LOGFILE%/*}
+if [ "$1" == "import" -a "$2" != "-n" ]; then
+  echo -e "Initial command:\n $ $0 $@" >> $LOGFILE
+  declare -a opts=("$@") ;
+  for ((i=0;i<${#opts[@]};i++)); do
+    #echo "opt $i: ${opts[i]}" >> $LOGFILE
+    case "${opts[$i]}" in
+      --vmname)
+        vmname=${opts[((i+1))]}
+        opt_vmname=$((i+1))
+      ;;
+      --disk)
+        disk=${opts[((i+1))]}
+        opt_disk=$((i+1))
+      ;;
+		esac
+  done
+  golden_vmname="${vmname%-vagrant-*}-golden"
+  echo "Golden vmname is $golden_vmname" >> $LOGFILE
+  if ! $VBOXMANAGE list vms | grep -q -e "^\"$golden_vmname\" {"; then 
+    echo "Golden $golden_vmname does not exist, importing !" >> $LOGFILE
+    opts[$opt_vmname]="$golden_vmname"
+    opts[$opt_disk]=${disk%/*/*}/$golden_vmname/${disk##*/}
+    echo -e "Changed import command to:\n$ $VBOXMANAGE ${opts[@]}" >> $LOGFILE
+    $VBOXMANAGE "${opts[@]}"
+  else
+    echo "Golden $golden_vmname already existsi, reusing !" >> $LOGFILE
+  fi
+  $VBOXMANAGE snapshot $golden_vmname take $vmname
+  exec $VBOXMANAGE clonevm $golden_vmname --options link --snapshot $vmname --name $vmname --register
+fi
+exec $VBOXMANAGE "$@"

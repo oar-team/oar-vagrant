@@ -1,0 +1,19 @@
+see https://github.com/mitchellh/vagrant/issues/1339
+
+
+Hello,
+
+I just wrote a proof of concept wrapper script around VBoxManage, to force vagrant to use linked clones, instead of importing a vagrant box as a new VM every time.
+
+The script is here:
+https://gist.github.com/npf/6b6ff2a0f5f2b8a2b8d4
+
+It can be placed here ~/.vagrant.d/bin/VBoxManage
+
+Using it is just the matter of exporting PATH=~/.vagrant.d/bin:$PATH and vagrant up will first import the box in VirtualBox as a golden box if not done previously, then snapshot that box and "link-clone" it for every new VMs that request the same vagrant box.
+Seems to works quite well.
+For sure, doing it in Vagrant code (ruby) would be a better place I guess.
+
+Hope this helps
+Pierre
+

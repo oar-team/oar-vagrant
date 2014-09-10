@@ -1,0 +1,16 @@
+#!/bin/bash
+VBOXMANAGE=/usr/bin/VBoxManage
+VBOXVMDIR="$HOME/VirtualBox VMs"
+VAGRANTVMDIR="/tmp/vagrant"
+LOGFILE=/tmp/vagrant/vboxmanage.$(date +%s)
+echo "$0 $@" >> $LOGFILE
+if [ "$1" == "import" ]; then
+declare -a ARGS
+while [ $# -gt 0 ]; do
+ARGS=(${ARGS[@]} ${1/$VBOXVMDIR/$VAGRANTVMDIR})
+shift
+done
+echo "===> $VBOXMANAGE ${ARGS[@]}" >> $LOGFILE
+exec $VBOXMANAGE "${ARGS[@]}"
+fi
+exec $VBOXMANAGE "$@"
