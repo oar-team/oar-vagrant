@@ -1,15 +1,21 @@
 #-*- mode: ruby -*-
 # vi: set ft=ruby :
-require "ffi"
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
+
+# Change HOSTS_COUNT to set the number of nodes of your cluster.
+# Warning: vagrant is very greedy on disk, consider using the trick below if
+# running more than a few nodes.
 HOSTS_COUNT = 1
 
-if FFI::Platform::IS_LINUX
-  CUSTOM_PATH = File.join(File.dirname(__FILE__), "..", "misc", "vagrant-use-linked-clones")
-  ENV["PATH"] = "#{File.absolute_path(CUSTOM_PATH)}:#{ENV["PATH"]}"
-end
+## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
+## and optimze the storage size of the VMs
+#require "ffi"
+#if FFI::Platform::IS_LINUX
+#  CUSTOM_PATH = File.join(File.dirname(__FILE__), "..", "misc", "vagrant-use-linked-clones")
+#  ENV["PATH"] = "#{File.absolute_path(CUSTOM_PATH)}:#{ENV["PATH"]}"
+#end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oar-team/centos-6.5"
