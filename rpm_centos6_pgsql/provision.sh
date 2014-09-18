@@ -31,12 +31,11 @@ stamp="provision EPEL repo"
 stamp="provision OAR-Testing repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat <<'EOF' | tee /etc/yum.repos.d/OAR-testing.repo
-[OAR-testing]
-name=OAR-testing
-baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/testing/
-gpgcheck=1
-gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+  cat <<'EOF' | tee /etc/yum.repos.d/OAR.repo
+[OAR]
+name=OAR
+baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable
+gpgcheck=0
 enabled=0
 EOF
   touch /tmp/stamp.${stamp// /_}
@@ -65,7 +64,7 @@ EOF
     stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-server oar-server-pgsql
+      yum install -y --enablerepo=OAR oar-server oar-server-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -98,9 +97,16 @@ EOF
     stamp="create oar resources"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      oar_resources_add -H $HOSTS_COUNT -C 1 -c 1 -t 1 | tee /tmp/oar_create_resources
-      sync
-      . /tmp/oar_create_resources
+      #oar_resources_add -H $HOSTS_COUNT -C 1 -c 1 -t 1 | tee /tmp/oar_create_resources
+      #sync
+      #. /tmp/oar_create_resources
+      oarproperty -a "host" -c
+      oarproperty -a "cpu"
+      oarproperty -a "core"
+      oarproperty -a "thread"
+      for ((h=1;h<=$HOSTS_COUNT;h++)); do
+        oarnodesetting -a -h "node-$h" -p host="node-$h" -p cpu=1 -p core=1 -p thread=1
+      done
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -195,14 +201,14 @@ EOF
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-user oar-user-pgsql
+      yum install -y --enablerepo=OAR oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-web-status oar-web-status-pgsql
+      yum install -y --enablerepo=OAR oar-web-status oar-web-status-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -245,22 +251,22 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="set drawgantt-svg config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i \
-          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
-          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
-          /etc/oar/drawgantt-config.inc.php
-      touch /tmp/stamp.${stamp// /_}
-    )
+#    stamp="set drawgantt-svg config"
+#    [ -e /tmp/stamp.${stamp// /_} ] || (
+#      echo -ne "##\n## $stamp\n##\n" ; set -x
+#      sed -i \
+#          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
+#          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
+#          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
+#          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
+#          /etc/oar/drawgantt-config.inc.php
+#      touch /tmp/stamp.${stamp// /_}
+#    )
 
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-restful-api
+      yum install -y --enablerepo=OAR oar-restful-api
       yum install -y perl-YAML oidentd perl-FCGI
       sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
       sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
@@ -308,7 +314,7 @@ EOF
     stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-node
+      yum install -y --enablerepo=OAR oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
