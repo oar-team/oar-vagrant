@@ -4,7 +4,7 @@ set -e
 
 export BOX=$1
 export HOSTS_COUNT=$2
-export NETWORK="192.168.34"
+export NETWORK="192.168.35"
 export DEBIAN_FRONTEND=noninteractive
 export PGSQL_VERSION=9.1
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
