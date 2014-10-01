@@ -10,10 +10,11 @@
 - install_vbox_guest_additions:
   - exec_in: echo "VirtualBox Guest Additions..."
   - download_file_in:
-    - "http://download.virtualbox.org/virtualbox/4.3.8/VBoxGuestAdditions_4.3.8.iso"
-    - VBoxGuestAdditions_4.3.8.iso
+    - "http://download.virtualbox.org/virtualbox/4.3.16/VBoxGuestAdditions_4.3.16.iso"
+    - VBoxGuestAdditions_4.3.16.iso
   - exec_in: mkdir /media/VBoxGuestAdditions
-  - exec_in: mount -o loop VBoxGuestAdditions_4.3.8.iso /media/VBoxGuestAdditions
+  - exec_in: modprobe loop
+  - exec_in: mount -o loop,ro VBoxGuestAdditions_4.3.16.iso /media/VBoxGuestAdditions
   - exec_in: yes|sh /media/VBoxGuestAdditions/VBoxLinuxAdditions.run --nox11 || true 2>&1
   - exec_in: rm -f VBoxGuestAdditions_4.3.8.iso
   - exec_in: umount /media/VBoxGuestAdditions
