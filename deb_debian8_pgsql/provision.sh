@@ -6,7 +6,7 @@ export BOX=$1
 export HOSTS_COUNT=$2
 export NETWORK="192.168.35"
 export DEBIAN_FRONTEND=noninteractive
-export PGSQL_VERSION=9.1
+export PGSQL_VERSION=9.4
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -142,7 +142,7 @@ EOF
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y nfs-kernel-server
+      apt-get install -y nfs-kernel-server netbase
       echo "/home/ $NETWORK.0/24(rw,no_subtree_check)" > /etc/exports
       service nfs-kernel-server restart
       exportfs -rv
