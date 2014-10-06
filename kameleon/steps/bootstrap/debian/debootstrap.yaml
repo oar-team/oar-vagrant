@@ -4,7 +4,6 @@
   - exec_out: mkdir -p $$rootfs
   - exec_out: |
       debootstrap \
-      --variant=$$variant \
       --no-check-gpg \
       --arch=$$arch \
       --include="$$include_pkg" \

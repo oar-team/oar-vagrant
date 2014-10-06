@@ -82,7 +82,6 @@ bootstrap:
     - release: $$release
     - arch: $$arch
     - repository: $$apt_repository
-    - variant: minbase
   - switch_context_virtualbox
 
 #== Install and configuration steps
