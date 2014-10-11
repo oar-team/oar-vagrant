@@ -142,7 +142,7 @@ EOF
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y nfs-kernel-server netbase
+      apt-get install -y nfs-kernel-server
       echo "/home/ $NETWORK.0/24(rw,no_subtree_check)" > /etc/exports
       service nfs-kernel-server restart
       exportfs -rv
