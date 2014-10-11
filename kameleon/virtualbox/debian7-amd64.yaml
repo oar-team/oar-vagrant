@@ -64,10 +64,7 @@ global:
     proxy_cache: 10.0.2.2
 
   bootstrap_packages: >
-    apt-utils ca-certificates locales less linux-image-$$kernel_arch
-    isc-dhcp-client ifupdown iptables iputils-ping iproute pciutils
-    psmisc acpid acpi-support-base openssh-server sysvinit man-db
-    net-tools
+    linux-image-$$kernel_arch openssh-server
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:

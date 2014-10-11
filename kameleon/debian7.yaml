@@ -7,11 +7,9 @@
 #==============================================================================
 
 ---
-extend: virtualbox/debian7-amd64.yaml
+extend: virtualbox/debian7-vagrant-amd64.yaml
 
 global:
-  ## User varibales : used by the recipe
-  user_name: vagrant
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
@@ -20,10 +18,6 @@ bootstrap:
 #== Install and configuration steps
 setup:
   - "@base"
-  - install_software:
-    - packages: >
-        linux-headers-$(uname -r) nfs-common dkms rsync
-  - setup_vagrant_box
 
 #== Export the generated appliance in the format of your choice
 export:
