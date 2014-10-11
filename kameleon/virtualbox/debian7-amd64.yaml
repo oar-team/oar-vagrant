@@ -48,7 +48,7 @@ global:
     - $$distrib
 
   # Apt options
-  apt_repository: http://ftp.fr.debian.org/debian/
+  apt_repository: http://ftp.debian.org/debian/
   apt_enable_contrib: true
   apt_enable_nonfree: true
 
@@ -82,6 +82,7 @@ bootstrap:
     - release: $$release
     - arch: $$arch
     - repository: $$apt_repository
+    - variant: default  # default|minbase|buildd|fakechroot|scratchbox
   - switch_context_virtualbox
 
 #== Install and configuration steps
