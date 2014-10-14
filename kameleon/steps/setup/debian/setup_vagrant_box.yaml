@@ -7,17 +7,16 @@
 - set_root_password:
   - exec_in: echo -n 'root:$$user_name' | chpasswd
 
-- install_vbox_guest_additions:
-  - exec_in: echo "VirtualBox Guest Additions..."
-  - download_file_in:
-    - "http://download.virtualbox.org/virtualbox/4.3.8/VBoxGuestAdditions_4.3.8.iso"
-    - VBoxGuestAdditions_4.3.8.iso
-  - exec_in: mkdir /media/VBoxGuestAdditions
-  - exec_in: mount -o loop VBoxGuestAdditions_4.3.8.iso /media/VBoxGuestAdditions
-  - exec_in: yes|sh /media/VBoxGuestAdditions/VBoxLinuxAdditions.run --nox11 || true 2>&1
-  - exec_in: rm -f VBoxGuestAdditions_4.3.8.iso
-  - exec_in: umount /media/VBoxGuestAdditions
-  - exec_in: rmdir /media/VBoxGuestAdditions
+- install_puppet:
+  - exec_in: |
+      wget --progress=bar:force http://apt.puppetlabs.com/puppetlabs-release-stable.deb 2>&1
+      dpkg -i puppetlabs-release-stable.deb
+      apt-get update
+      apt-get install puppet -y --force-yes
+      rm -f puppetlabs-release-stable.deb
+
+- install_chef:
+  - exec_in: curl -L https://www.opscode.com/chef/install.sh -k | bash
 
 - copy_insecure_sshkey:
   - exec_in: mkdir -pm 700 /home/$$user_name/.ssh/
