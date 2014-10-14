@@ -23,14 +23,15 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR unstable repo"
-[ -e /tmp/stamp.${stamp// /_} ] || (
-  echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
-  curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-  apt-get update
-  touch /tmp/stamp.${stamp// /_}
-)
+# commented -> OAR package 2.5.2-1 are in debian official repos 
+#stamp="provision OAR unstable repo"
+#[ -e /tmp/stamp.${stamp// /_} ] || (
+#  echo -ne "##\n## $stamp\n##\n" ; set -x
+#  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
+#  curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+#  apt-get update
+#  touch /tmp/stamp.${stamp// /_}
+#)
 
 stamp="update system"
 [ -e /tmp/stamp.${stamp// /_} ] || (
@@ -218,17 +219,18 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="set drawgantt-svg config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i \
-          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
-          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
-          /etc/oar/drawgantt-config.inc.php
-      touch /tmp/stamp.${stamp// /_}
-    )
+# No drawgantt-svg in oar 2.5.2
+#    stamp="set drawgantt-svg config"
+#    [ -e /tmp/stamp.${stamp// /_} ] || (
+#      echo -ne "##\n## $stamp\n##\n" ; set -x
+#      sed -i \
+#          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
+#          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
+#          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
+#          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
+#          /etc/oar/drawgantt-config.inc.php
+#      touch /tmp/stamp.${stamp// /_}
+#    )
 
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
