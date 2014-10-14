@@ -32,6 +32,14 @@ stamp="provision OAR unstable repo"
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="update system"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  apt-get update
+  apt-get upgrade -y
+  touch /tmp/stamp.${stamp// /_}
+)
+
 case $BOX in
   server)
     stamp="install and configure postgresql server"
