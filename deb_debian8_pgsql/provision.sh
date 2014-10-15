@@ -28,7 +28,6 @@ stamp="provision OAR unstable repo"
   echo -ne "##\n## $stamp\n##\n" ; set -x
   echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
   curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-  apt-get update
   touch /tmp/stamp.${stamp// /_}
 )
 
