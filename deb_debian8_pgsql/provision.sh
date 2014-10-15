@@ -7,6 +7,7 @@ export HOSTS_COUNT=$2
 export NETWORK="192.168.35"
 export DEBIAN_FRONTEND=noninteractive
 export PGSQL_VERSION=9.4
+export OAR_APT_OPTS=""
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -178,14 +179,14 @@ EOF
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-user oar-user-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-web-status libdbd-pg-perl php5-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -235,7 +236,7 @@ EOF
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-restful-api libapache2-mod-fastcgi oidentd 
+      apt-get install -y $OAR_APT_OPTS oar-restful-api libapache2-mod-fastcgi oidentd
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
