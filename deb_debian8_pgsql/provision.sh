@@ -59,8 +59,7 @@ EOF
     stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-server oar-server-pgsql libterm-ui-perl
-      systemctl --system daemon-reload
+      apt-get install -y oar-server oar-server-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -271,7 +270,6 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y oar-node
-      systemctl --system daemon-reload
       touch /tmp/stamp.${stamp// /_}
     )
 
