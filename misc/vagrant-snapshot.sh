@@ -28,7 +28,7 @@ case $ACTION in
     list*)
       for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
         echo "Listing snapshots of ${vm%:*}:"
-        vboxmanage snapshot ${vm#*:} list
+        vboxmanage snapshot ${vm#*:} list | sed -e "s/ (UUID: [^)]\+)//"
       done
       ;;
     del*)
