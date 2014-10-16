@@ -2,45 +2,99 @@
 ACTION=$1
 SNAP_STAMP=$2
 VMNAME_PREFIX=${PWD##*/}
+
+snap() {
+  echo "Snapshoting with stamp: ${SNAP_STAMP:=$(date +%F_%T)}"
+  for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
+    echo -n "Snapshoting ${vm%:*} > "
+    vboxmanage snapshot ${vm#*:} take $SNAP_STAMP
+  done
+}
+
+restore() {
+  if [ -z "$SNAP_STAMP" ]; then
+    echo -e "Error: No snapshot name given\n" >&2
+    usage >&2
+    exit 1
+  fi
+  echo "Try to restore snapshot with stamp: $SNAP_STAMP"
+  for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
+    if vboxmanage snapshot ${vm#*:} list | grep -q -e "Name: $SNAP_STAMP (UUID:"; then
+      echo -n "Pausing VM ${vm%:*} > "
+      vboxmanage controlvm ${vm#*:} savestate
+      echo "Restoring snapshot"
+      vboxmanage snapshot ${vm#*:} restore $SNAP_STAMP
+      echo -n "Resuming VM > "
+      vboxmanage startvm ${vm#*:} --type headless
+    else
+      echo "Stamp $SNAP_STAMP not found for vm ${vm%:*}."
+    fi
+  done
+}
+
+del() {
+  if [ -z "$SNAP_STAMP" ]; then
+    echo -e "Error: No snapshot name given\n" >&2
+    usage >&2
+    exit 1
+  fi
+  echo "Delete snapshots with stamp: $SNAP_STAMP"
+  for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
+    if vboxmanage snapshot ${vm#*:} list | grep -q -e "Name: $SNAP_STAMP (UUID:"; then
+      echo -n "Delete snapshot for vm ${vm%:*}:"
+      vboxmanage snapshot ${vm#*:} delete $SNAP_STAMP
+    else
+      echo "Stamp $SNAP_STAMP not found for vm ${vm%:*}."
+    fi
+  done
+}
+
+list() {
+  for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
+    echo "Listing snapshots of ${vm%:*}:"
+    vboxmanage snapshot ${vm#*:} list | sed -e "s/ (UUID: [^)]\+)//"
+  done
+}
+
+usage() {
+  CMD=${0##*/}
+  cat <<EOF
+$CMD: snapshot utility for a OAR-vagrant virtual clusters
+
+Usage:  
+  $CMD list
+  $CMD snapshot [<snapshot name>]
+  $CMD restore <snapshot name>
+  $CMD delete <snapshot name>
+
+EOF
+}
+
 if [ -z "$1" ]; then
-  echo "No action given" >&2
+  echo -e "Error: No action given\n" >&2
+  usage >&2
   exit 1
 fi
+
 case $ACTION in
     snap*)
-      echo "Snapshoting with stamp: ${SNAP_STAMP:=$(date +%F_%T)}"
-      for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
-        echo -n "Snapshoting ${vm%:*} > "
-        vboxmanage snapshot ${vm#*:} take $SNAP_STAMP
-      done
+      snap
       ;;
     restore*)
-      echo "Try to restore snapshot with stamp: $SNAP_STAMP"
-      for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
-        echo -n "Pausing VM ${vm%:*} > "
-        vboxmanage controlvm ${vm#*:} savestate
-        echo "Restoring snapshot"
-        vboxmanage snapshot ${vm#*:} restore $SNAP_STAMP
-        echo -n "Resuming VM > "
-        vboxmanage startvm ${vm#*:} --type headless
-      done
+      restore
       ;;
     list*)
-      for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
-        echo "Listing snapshots of ${vm%:*}:"
-        vboxmanage snapshot ${vm#*:} list | sed -e "s/ (UUID: [^)]\+)//"
-      done
+      list
       ;;
     del*)
-      echo "Delete snapshots with stamp: $SNAP_STAMP"
-      for vm in $(vboxmanage list vms | grep -e "^\"${VMNAME_PREFIX}_[^\"]\+\"" | sed 's/^"\([^"]\+\)" {\(.\+\)}$/\1:\2/'); do
-        echo -n "Delete snapshots for vm ${vm%:*}:"
-        vboxmanage snapshot ${vm#*:} delete $SNAP_STAMP
-      done
+      del
       ;;
-    \?)
-      echo "Invalid action: $ACTION" >&2
-      exho 1
+    --help|-h)
+      usage
+      ;;
+    *)
+      echo -e "Invalid action: $ACTION\n" >&2
+      usage >&2
       ;;
 esac
 
