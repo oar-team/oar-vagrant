@@ -4,10 +4,11 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-# Change HOSTS_COUNT to set the number of nodes of your cluster.
-# Warning: vagrant is very greedy on disk, consider using the trick below if
+# NODES_COUNT set the number of nodes of your cluster.
+# Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
+# ***Warning***: vagrant is very greedy on disk, consider using the trick below if
 # running more than a few nodes.
-HOSTS_COUNT = 1
+NODES_COUNT = (ENV.include? "OARVAGRANT_NODES_COUNT" and ENV["OARVAGRANT_NODES_COUNT"] =~ /[[:digit:]]+/)?ENV["OARVAGRANT_NODES_COUNT"]:1
 
 ## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
 ## and optimze the storage size of the VMs
@@ -23,20 +24,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     m.vm.hostname = "server"
     m.vm.network :private_network, ip: "192.168.34.10"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "server #{HOSTS_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "server #{NODES_COUNT}", privileged: true
   end
   config.vm.define "frontend" do |m|
     m.vm.hostname = "frontend"
     m.vm.network :private_network, ip: "192.168.34.11"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "frontend #{HOSTS_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "frontend #{NODES_COUNT}", privileged: true
   end
-  (1..HOSTS_COUNT).each do |i|
+  (1..NODES_COUNT).each do |i|
     config.vm.define "node-#{i}" do |m|
       m.vm.hostname = "node-#{i}"
       m.vm.network :private_network, ip: "192.168.34.#{i+100}"
       m.ssh.forward_agent = true
-      m.vm.provision :shell, path: "provision.sh", args: "nodes #{HOSTS_COUNT}", privileged: true
+      m.vm.provision :shell, path: "provision.sh", args: "nodes #{NODES_COUNT}", privileged: true
     end
   end
 end
