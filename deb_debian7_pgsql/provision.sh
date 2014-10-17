@@ -330,7 +330,7 @@ EOF
     stamp="forbid user ssh to node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      cat <<EOF > /etc/security/access.conf
+      cat <<EOF >> /etc/security/access.conf
 + : ALL : LOCAL
 - : ALL EXCEPT root oar
 EOF
