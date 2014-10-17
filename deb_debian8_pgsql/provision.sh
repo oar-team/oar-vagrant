@@ -333,6 +333,17 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="forbid user ssh to node"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      cat <<EOF > /etc/security/access.conf
++ : ALL : LOCAL
+- : ALL EXCEPT root oar
+EOF
+      sed -i -e "s/^#[[:space:]]\+\(account[[:space:]]\+required[[:space:]]\+pam_access.so.*\)$/\1/" /etc/pam.d/login
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   *)
     echo "Error: unknown BOX" 2>&1
