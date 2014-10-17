@@ -237,7 +237,7 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="set monika config"
+    stamp="set oar-web-status configs"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -247,18 +247,14 @@ EOF
           -e "s/^\(dbport =\).*/\1 5432/" \
           -e "s/^\(hostname =\).*/\1 server/" \
           /etc/oar/monika.conf
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="set drawgantt-svg config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
           -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
           -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
           -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
           /etc/oar/drawgantt-config.inc.php
+      a2enconf oar-web-status
+      service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -269,6 +265,7 @@ EOF
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
+      a2enconf oar-restful-api
       service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
