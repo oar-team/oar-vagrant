@@ -47,4 +47,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.memory = VM_MEMORY
     v.cpus = VM_CPU
   end
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    # install polipo
+    # vagrant plugin install vagrant-proxyconf
+    config.proxy.http     = "http://192.168.35.1:3128/"
+    config.proxy.https    = "http://192.168.35.1:3128/"
+    config.proxy.no_proxy = "localhost,127.0.0.1"
+  end
+
+  if Vagrant.has_plugin?("vagrant-cachier")
+    # vagrant plugin install vagrant-cachier
+    config.cache.scope = :box
+  end
+
 end
