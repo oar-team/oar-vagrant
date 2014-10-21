@@ -8,7 +8,9 @@ VAGRANTFILE_API_VERSION = "2"
 # Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
 # ***Warning***: vagrant is very greedy on disk, consider using the trick below if
 # running more than a few nodes.
-NODES_COUNT = (ENV.include? "OARVAGRANT_NODES_COUNT" and ENV["OARVAGRANT_NODES_COUNT"] =~ /[[:digit:]]+/)?ENV["OARVAGRANT_NODES_COUNT"]:1
+NODES_COUNT = (ENV["OARVAGRANT_NODES_COUNT"] || 1).to_i
+VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 512).to_i
+VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
 
 ## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
 ## and optimze the storage size of the VMs
@@ -39,5 +41,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       m.ssh.forward_agent = true
       m.vm.provision :shell, path: "provision.sh", args: "nodes #{NODES_COUNT}", privileged: true
     end
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = VM_MEMORY
+    v.cpus = VM_CPU
   end
 end
