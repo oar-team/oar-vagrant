@@ -34,36 +34,39 @@ stamp="Drop Puppet repository"
 stamp="provision Debian unstable repo for OAR packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
+  cat <<EOF > /etc/apt/sources.list.d/oar.list
+deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main
+EOF
+  wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
   cat <<EOF > /etc/apt/sources.list.d/sid.list
 deb http://ftp.debian.org/debian/ sid main contrib non-free
 EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "jessie";
 EOF
-  cat <<EOF > /etc/apt/preferences.d/take-oar-from-sid
-# Debian sid
+  cat <<EOF > /etc/apt/preferences.d/take-last-oar-devel-packages
+Package: oar-* liboar-perl
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: 999
+
 Package: oar-* liboar-perl
 Pin: release n=sid
 Pin-Priority: 999
 
 Package: *
-Pin: release n=jessie
-Pin-Priority: 500
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: -1
 
 Package: *
 Pin: release n=sid
 Pin-Priority: -1
+
+Package: *
+Pin: release n=jessie
+Pin-Priority: 500
 EOF
   touch /tmp/stamp.${stamp// /_}
 )
-
-#stamp="provision OAR unstable repo"
-#[ -e /tmp/stamp.${stamp// /_} ] || (
-#  echo -ne "##\n## $stamp\n##\n" ; set -x
-#  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
-#  curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-#  touch /tmp/stamp.${stamp// /_}
-#)
 
 stamp="update system"
 [ -e /tmp/stamp.${stamp// /_} ] || (
