@@ -7,6 +7,7 @@ export HOSTS_COUNT=$2
 export NETWORK="192.168.34"
 export DEBIAN_FRONTEND=noninteractive
 export PGSQL_VERSION=9.1
+export OAR_APT_OPTS=""
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -23,12 +24,47 @@ stamp="provision etc hosts"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR unstable repo"
+stamp="Drop Puppet repository"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main" > /etc/apt/sources.list.d/oar.list
-  curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+  rm -f /etc/apt/sources.list.d/puppetlabs.list
+  touch /tmp/stamp.${stamp// /_}
+)
+
+stamp="provision Debian unstable repo for OAR packages"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  cat <<EOF > /etc/apt/sources.list.d/oar.list
+deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy-unstable main
+EOF
+  wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+  cat <<EOF > /etc/apt/sources.list.d/sid.list
+deb http://ftp.debian.org/debian/ sid main contrib non-free
+EOF
+  cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
+APT::Default-Release "wheezy";
+EOF
+  cat <<EOF > /etc/apt/preferences.d/take-last-oar-devel-packages
+Package: oar-* liboar-perl
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: 999
+
+Package: *
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: -1
+
+Package: *
+Pin: release n=wheezy
+Pin-Priority: 500
+EOF
+  touch /tmp/stamp.${stamp// /_}
+)
+
+stamp="update system"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
   apt-get update
+  apt-get upgrade -y
   touch /tmp/stamp.${stamp// /_}
 )
 
@@ -51,7 +87,7 @@ EOF
     stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-server oar-server-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-server oar-server-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -168,14 +204,14 @@ EOF
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-user oar-user-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-web-status libdbd-pg-perl php5-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -196,7 +232,7 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="set monika config"
+    stamp="set oar-web-status configs"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
@@ -206,12 +242,6 @@ EOF
           -e "s/^\(dbport =\).*/\1 5432/" \
           -e "s/^\(hostname =\).*/\1 server/" \
           /etc/oar/monika.conf
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="set drawgantt-svg config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
           -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
@@ -224,7 +254,7 @@ EOF
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-restful-api libapache2-mod-fastcgi oidentd 
+      apt-get install -y $OAR_APT_OPTS oar-restful-api libapache2-mod-fastcgi oidentd
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
@@ -261,7 +291,7 @@ EOF
     stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y oar-node
+      apt-get install -y $OAR_APT_OPTS oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -289,6 +319,17 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="forbid user ssh to node"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      cat <<EOF >> /etc/security/access.conf
++ : ALL : LOCAL
+- : ALL EXCEPT root oar
+EOF
+      sed -i -e "s/^#[[:space:]]\+\(account[[:space:]]\+required[[:space:]]\+pam_access.so.*\)$/\1/" /etc/pam.d/login
       touch /tmp/stamp.${stamp// /_}
     )
 

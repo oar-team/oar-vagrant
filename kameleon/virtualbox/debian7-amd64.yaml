@@ -48,7 +48,7 @@ global:
     - $$distrib
 
   # Apt options
-  apt_repository: http://ftp.fr.debian.org/debian/
+  apt_repository: http://ftp.debian.org/debian/
   apt_enable_contrib: true
   apt_enable_nonfree: true
 
@@ -63,6 +63,9 @@ global:
     workdir: /root/kameleon_workdir
     proxy_cache: 10.0.2.2
 
+  bootstrap_packages: >
+    linux-image-$$kernel_arch openssh-server
+
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - enable_checkpoint
@@ -72,15 +75,11 @@ bootstrap:
     - packages: parted e2fsprogs debootstrap extlinux
   - initialize_disk
   - debootstrap:
-    - include_pkg: >
-        apt-utils ca-certificates locales less linux-image-$$kernel_arch
-        isc-dhcp-client ifupdown iptables iputils-ping iproute pciutils
-        psmisc acpid acpi-support-base openssh-server sysvinit man-db
-        net-tools
+    - include_pkg: $$bootstrap_packages
     - release: $$release
     - arch: $$arch
     - repository: $$apt_repository
-    - variant: minbase
+    - variant: default  # default|minbase|buildd|fakechroot|scratchbox
   - switch_context_virtualbox
 
 #== Install and configuration steps

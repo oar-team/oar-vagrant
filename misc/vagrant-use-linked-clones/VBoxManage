@@ -18,7 +18,7 @@ if [ "$1" == "import" -a "$2" != "-n" ]; then
       ;;
 		esac
   done
-  golden_vmname="${vmname%-vagrant-*}-golden"
+  golden_vmname="${vmname%%_*}-golden"
   echo "Golden vmname is $golden_vmname" >> $LOGFILE
   if ! $VBOXMANAGE list vms | grep -q -e "^\"$golden_vmname\" {"; then 
     echo "Golden $golden_vmname does not exist, importing !" >> $LOGFILE

@@ -4,7 +4,9 @@ set -e
 
 export BOX=$1
 export HOSTS_COUNT=$2
-export NETWORK="192.168.33"
+export NETWORK="192.168.36"
+export DEBIAN_FRONTEND=noninteractive
+export OAR_APT_OPTS=""
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
   exit 1
@@ -13,59 +15,81 @@ fi
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo $NETWORK.10 server >> /etc/hosts 
-  echo $NETWORK.11 frontend >> /etc/hosts 
+  echo $NETWORK.10 server >> /etc/hosts
+  echo $NETWORK.11 frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts 
+    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts
   done
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision EPEL repo"
+stamp="Drop Puppet repository"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+  rm -f /etc/apt/sources.list.d/puppetlabs.list
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR-Testing repo"
+stamp="provision Debian unstable repo for OAR packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat <<'EOF' | tee /etc/yum.repos.d/OAR-testing.repo
-[OAR-testing]
-name=OAR-testing
-baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/testing/
-gpgcheck=1
-gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-enabled=0
+  cat <<EOF > /etc/apt/sources.list.d/oar.list
+deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main
 EOF
+  wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+  cat <<EOF > /etc/apt/sources.list.d/sid.list
+deb http://ftp.debian.org/debian/ sid main contrib non-free
+EOF
+  cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
+APT::Default-Release "jessie";
+EOF
+  cat <<EOF > /etc/apt/preferences.d/take-last-oar-devel-packages
+Package: oar-* liboar-perl
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: 999
+
+Package: oar-* liboar-perl
+Pin: release n=sid
+Pin-Priority: 999
+
+Package: *
+Pin: origin "oar-ftp.imag.fr"
+Pin-Priority: -1
+
+Package: *
+Pin: release n=sid
+Pin-Priority: -1
+
+Package: *
+Pin: release n=jessie
+Pin-Priority: 500
+EOF
+  touch /tmp/stamp.${stamp// /_}
+)
+
+stamp="update system"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  apt-get update
+  apt-get upgrade -y
   touch /tmp/stamp.${stamp// /_}
 )
 
 case $BOX in
   server)
-    stamp="install and configure postgresql server"
+    stamp="install and configure mysql server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y postgresql-server
-      service postgresql initdb
-      PGSQL_CONFDIR=/var/lib/pgsql/data
-      sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
-      sed -i -e "s/\(host \+all \+all \+127.0.0.1\/32 \+\)ident/\1md5/" \
-             -e "s/\(host \+all \+all \+::1\/128 \+\)ident/\1md5/" $PGSQL_CONFDIR/pg_hba.conf
-      cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
-#Access to OAR database
-host oar all $NETWORK.0/24 md5 
-EOF
-      chkconfig postgresql on
-      service postgresql restart
+      apt-get install -y mysql-server
+      sed -i -e "s/^\(bind-address[[:space:]]*=\).*/\1 $NETWORK.10/" /etc/mysql/my.cnf
+      service mysql restart
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-server oar-server-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-server oar-server-mysql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -73,9 +97,9 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
-          -e 's/^\(DB_TYPE\)=.*/\1="Pg"/' \
+          -e 's/^\(DB_TYPE\)=.*/\1="mysql"/' \
           -e 's/^\(DB_HOSTNAME\)=.*/\1="server"/' \
-          -e 's/^\(DB_PORT\)=.*/\1="5432"/' \
+          -e 's/^\(DB_PORT\)=.*/\1="3306"/' \
           -e 's/^\(DB_BASE_PASSWD\)=.*/\1="oar"/' \
           -e 's/^\(DB_BASE_LOGIN\)=.*/\1="oar"/' \
           -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' \
@@ -117,7 +141,7 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
-        adduser -N user$i
+        useradd -N -m -s /bin/bash user$i
         echo "user$i:vagrant" | chpasswd 
         cp -a /home/vagrant/.ssh /home/user$i/
         cat >> /home/user$i/.bashrc <<'EOF'
@@ -156,9 +180,9 @@ EOF
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      chkconfig nfs on
-      service nfs start
-      echo "/home/ $NETWORK.0/24(rw,no_root_squash)" > /etc/exports
+      apt-get install -y nfs-kernel-server
+      echo "/home/ $NETWORK.0/24(rw,no_subtree_check)" > /etc/exports
+      service nfs-kernel-server restart
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
@@ -167,42 +191,29 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
-      yum install -y ypserv yp-tools ypbind
-      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
-      domainname $NISDOMAIN
-      ypdomainname $NISDOMAIN
-      echo "broadcast" >> /etc/yp.conf
-      cat <<EOF > /var/yp/securenets
-host 127.0.0.1
-255.255.255.0 $NETWORK.0
-EOF
-      chkconfig ypserv on
-      service rpcbind restart
-      service ypserv start
-      /usr/lib64/yp/ypinit -m < /dev/null
-      chkconfig ypbind on
-      chkconfig yppasswdd on
-      service ypbind start
-      service yppasswdd start
-      sed -i \
-          -e "s/^\(passwd:     files\)/\1 nis/" \
-          -e "s/^\(shadow:     files\)/\1 nis/" \
-          -e "s/^\(group:     files\)/\1 nis/" \
-          /etc/nsswitch.conf
+      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
+      chmod +x /usr/sbin/policy-rc.d
+      apt-get install -y nis
+      rm /usr/sbin/policy-rc.d
+      nisdomainname $NISDOMAIN
+      sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
+      /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
+      service nis restart
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-user oar-user-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-user oar-user-mysql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-web-status oar-web-status-pgsql
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-mysql-perl php5-mysql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -210,9 +221,9 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
-          -e 's/^\(DB_TYPE\)=.*/\1="Pg"/' \
+          -e 's/^\(DB_TYPE\)=.*/\1="mysql"/' \
           -e 's/^\(DB_HOSTNAME\)=.*/\1="server"/' \
-          -e 's/^\(DB_PORT\)=.*/\1="5432"/' \
+          -e 's/^\(DB_PORT\)=.*/\1="3306"/' \
           -e 's/^\(DB_BASE_PASSWD\)=.*/\1="oar"/' \
           -e 's/^\(DB_BASE_LOGIN\)=.*/\1="oar"/' \
           -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' \
@@ -223,44 +234,37 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install httpd"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install httpd
-      chkconfig httpd on
-      service httpd start
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="set oar-web-status configs"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e "s/^\(username =\).*/\1 oar_ro/" \
           -e "s/^\(password =\).*/\1 oar_ro/" \
-          -e "s/^\(dbtype =\).*/\1 psql/" \
-          -e "s/^\(dbport =\).*/\1 5432/" \
+          -e "s/^\(dbtype =\).*/\1 mysql/" \
+          -e "s/^\(dbport =\).*/\1 3306/" \
           -e "s/^\(hostname =\).*/\1 server/" \
           /etc/oar/monika.conf
       sed -i \
-          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
+          -e "s/\(\$CONF\['db_type'\]=\).*/\1\"mysql\"/g" \
+          -e "s/\(\$CONF\['db_server'\]=\).*/\1\"server\"/g" \
+          -e "s/\(\$CONF\['db_port'\]=\).*/\1\"5432\"/g" \
           -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
           /etc/oar/drawgantt-config.inc.php
+      a2enconf oar-web-status
+      service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-restful-api
-      yum install -y perl-YAML oidentd perl-FCGI
-      sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
-      sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
-      service oidentd start
-      service httpd restart
-     touch /tmp/stamp.${stamp// /_}
+      apt-get install -y $OAR_APT_OPTS oar-restful-api libapache2-mod-fastcgi oidentd
+      a2enmod ident
+      a2enmod rewrite
+      a2enmod headers
+      a2enconf oar-restful-api
+      service apache2 restart
+      touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="setup ssh for oar user"
@@ -283,26 +287,16 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
-      yum install -y ypbind
-      echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
-      domainname $NISDOMAIN
-      ypdomainname $NISDOMAIN
-      echo "broadcast" >> /etc/yp.conf
-      service rpcbind restart
-      chkconfig ypbind on
-      service ypbind start
-      sed -i \
-          -e "s/^\(passwd:     files\)/\1 nis/" \
-          -e "s/^\(shadow:     files\)/\1 nis/" \
-          -e "s/^\(group:     files\)/\1 nis/" \
-          /etc/nsswitch.conf
+      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      apt-get install -y nis
+      echo "+::::::" >> /etc/passwd
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-node
+      apt-get install -y $OAR_APT_OPTS oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -338,9 +332,9 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       cat <<EOF >> /etc/security/access.conf
 + : ALL : LOCAL
-- : ALL EXCEPT root : ALL oar : ALL
+- : ALL EXCEPT root oar
 EOF
-      sed -i -e "s/^\(account[[:space:]]\+required[[:space:]]\+pam_\)\(unix.so*\)$/\1\2\n\1access.so/" /etc/pam.d/password-auth
+      sed -i -e "s/^#[[:space:]]\+\(account[[:space:]]\+required[[:space:]]\+pam_access.so.*\)$/\1/" /etc/pam.d/login
       touch /tmp/stamp.${stamp// /_}
     )
 

@@ -4,10 +4,13 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-# Change HOSTS_COUNT to set the number of nodes of your cluster.
-# Warning: vagrant is very greedy on disk, consider using the trick below if
+# NODES_COUNT set the number of nodes of your cluster.
+# Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
+# ***Warning***: vagrant is very greedy on disk, consider using the trick below if
 # running more than a few nodes.
-HOSTS_COUNT = 1
+NODES_COUNT = (ENV["OARVAGRANT_NODES_COUNT"] || 1).to_i
+VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 512).to_i
+VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
 
 ## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
 ## and optimze the storage size of the VMs
@@ -24,20 +27,39 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     m.vm.hostname = "server"
     m.vm.network :private_network, ip: "192.168.33.10"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "server #{HOSTS_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "server #{NODES_COUNT}", privileged: true
   end
   config.vm.define "frontend" do |m|
     m.vm.hostname = "frontend"
     m.vm.network :private_network, ip: "192.168.33.11"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "frontend #{HOSTS_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "frontend #{NODES_COUNT}", privileged: true
   end
-  (1..HOSTS_COUNT).each do |i|
+  (1..NODES_COUNT).each do |i|
     config.vm.define "node-#{i}" do |m|
       m.vm.hostname = "node-#{i}"
       m.vm.network :private_network, ip: "192.168.33.#{i+100}"
       m.ssh.forward_agent = true
-      m.vm.provision :shell, path: "provision.sh", args: "nodes #{HOSTS_COUNT}", privileged: true
+      m.vm.provision :shell, path: "provision.sh", args: "nodes #{NODES_COUNT}", privileged: true
     end
   end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = VM_MEMORY
+    v.cpus = VM_CPU
+  end
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    # install polipo
+    # vagrant plugin install vagrant-proxyconf
+    config.proxy.http     = "http://192.168.33.1:3128/"
+    config.proxy.https    = "http://192.168.33.1:3128/"
+    config.proxy.no_proxy = "localhost,127.0.0.1"
+  end
+
+  if Vagrant.has_plugin?("vagrant-cachier")
+    # vagrant plugin install vagrant-cachier
+    config.cache.scope = :box
+  end
+
 end
