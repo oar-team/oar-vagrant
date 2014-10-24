@@ -34,7 +34,7 @@ stamp="provision Debian unstable repo for OAR packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   cat <<EOF > /etc/apt/sources.list.d/oar.list
-deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid-unstable main
+deb http://oar-ftp.imag.fr/oar/2.5/debian/ sid main
 EOF
   wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
   cat <<EOF > /etc/apt/sources.list.d/sid.list

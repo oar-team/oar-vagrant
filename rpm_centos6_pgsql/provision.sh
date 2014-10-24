@@ -31,10 +31,10 @@ stamp="provision EPEL repo"
 stamp="provision OAR-Testing repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat <<'EOF' | tee /etc/yum.repos.d/OAR-testing.repo
-[OAR-testing]
-name=OAR-testing
-baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/testing/
+  cat <<'EOF' | tee /etc/yum.repos.d/OAR.repo
+[OAR]
+name=OAR
+baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
 gpgcheck=1
 gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
 enabled=0
@@ -65,7 +65,7 @@ EOF
     stamp="install oar-server package"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-server oar-server-pgsql
+      yum install -y --enablerepo=OAR oar-server oar-server-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -195,14 +195,14 @@ EOF
     stamp="install oar-user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-user oar-user-pgsql
+      yum install -y --enablerepo=OAR oar-user oar-user-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-web-status oar-web-status-pgsql
+      yum install -y --enablerepo=OAR oar-web-status oar-web-status-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -254,7 +254,7 @@ EOF
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-restful-api
+      yum install -y --enablerepo=OAR oar-restful-api
       yum install -y perl-YAML oidentd perl-FCGI
       sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
       sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
@@ -302,7 +302,7 @@ EOF
     stamp="install oar-node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR-testing oar-node
+      yum install -y --enablerepo=OAR oar-node
       touch /tmp/stamp.${stamp// /_}
     )
 
