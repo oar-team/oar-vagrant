@@ -97,7 +97,7 @@ setup:
   - install_software:
     - packages: >
         debian-keyring sudo less vim bash-completion curl less bzip2 wget
-        dialog tree extlinux
+        dialog tree extlinux locales
   - install_bootloader
   # Configuration
   - configure_system:
