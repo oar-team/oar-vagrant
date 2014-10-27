@@ -89,6 +89,9 @@ setup:
     - repository: $$apt_repository
     - enable_contrib_repo: $$apt_enable_contrib
     - enable_nonfree_repo: $$apt_enable_nonfree
+    - configure_source_list
+    - add_contribs_and_nonfree_sources
+    - update_repositories
   - upgrade_system:
     - dist_upgrade: true
   - install_software:
