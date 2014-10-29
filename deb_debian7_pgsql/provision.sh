@@ -38,9 +38,10 @@ stamp="provision Debian unstable repo for OAR packages"
 deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main
 EOF
   wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-  cat <<EOF > /etc/apt/sources.list.d/sid.list
-deb http://ftp.debian.org/debian/ sid main contrib non-free
-EOF
+# Uncomment to take package for Debian.org/sid
+#  cat <<EOF > /etc/apt/sources.list.d/sid.list
+#deb http://ftp.debian.org/debian/ sid main contrib non-free
+#EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "wheezy";
 EOF
