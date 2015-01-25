@@ -7,7 +7,7 @@
 #==============================================================================
 
 ---
-extend: virtualbox/centos6.5-x86_64
+extend: virtualbox/centos6-x86_64
 
 global:
   ## User varibales : used by the recipe

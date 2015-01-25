@@ -2,7 +2,7 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: Centos 6.5 base system (x86_64)
+# DESCRIPTION: Centos 6 base system (x86_64)
 #
 #==============================================================================
 
@@ -19,7 +19,7 @@ global:
 
   # Distribution
   distrib: centos
-  release: 6.5
+  release: 6
   arch: x86_64
   hostname: kameleon-$$distrib
 
