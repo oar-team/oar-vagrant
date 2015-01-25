@@ -4,6 +4,7 @@ set -e
 
 export BOX=$1
 export HOSTS_COUNT=$2
+export RELEASEBRANCH=${3:-stable}
 export NETWORK="192.168.33"
 if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
   echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
@@ -31,10 +32,10 @@ stamp="provision EPEL repo"
 stamp="provision OAR-Testing repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat <<'EOF' | tee /etc/yum.repos.d/OAR.repo
+  cat <<EOF | tee /etc/yum.repos.d/OAR.repo
 [OAR]
 name=OAR
-baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/$RELEASEBRANCH/
 gpgcheck=1
 gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
 enabled=0
