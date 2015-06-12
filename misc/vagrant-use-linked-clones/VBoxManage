@@ -27,7 +27,7 @@ if [ "$1" == "import" -a "$2" != "-n" ]; then
     echo -e "Changed import command to:\n$ $VBOXMANAGE ${opts[@]}" >> $LOGFILE
     $VBOXMANAGE "${opts[@]}"
   else
-    echo "Golden $golden_vmname already existsi, reusing !" >> $LOGFILE
+    echo "Golden $golden_vmname already exists, reusing it !" >> $LOGFILE
   fi
   $VBOXMANAGE snapshot $golden_vmname take $vmname
   exec $VBOXMANAGE clonevm $golden_vmname --options link --snapshot $vmname --name $vmname --register
