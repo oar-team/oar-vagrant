@@ -22,6 +22,7 @@ VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oar-team/debian8"
+  config.ssh.insert_key = false
   config.vm.define "server", primary: true do |m|
     m.vm.hostname = "server"
     m.vm.network :private_network, ip: "192.168.36.10"
