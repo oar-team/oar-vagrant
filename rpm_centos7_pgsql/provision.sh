@@ -25,7 +25,7 @@ stamp="provision etc hosts"
 stamp="provision EPEL repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+  yum install -y epel-release
   touch /tmp/stamp.${stamp// /_}
 )
 
@@ -49,7 +49,7 @@ case $BOX in
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y postgresql-server
-      service postgresql initdb
+      postgresql-setup initdb
       PGSQL_CONFDIR=/var/lib/pgsql/data
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       sed -i -e "s/\(host \+all \+all \+127.0.0.1\/32 \+\)ident/\1md5/" \
@@ -58,8 +58,8 @@ case $BOX in
 #Access to OAR database
 host oar all $NETWORK.0/24 md5 
 EOF
-      chkconfig postgresql on
-      service postgresql restart
+      systemctl enable postgresql.service
+      systemctl restart postgresql.service
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -154,11 +154,19 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="stop firewalld"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      systemctl stop firewalld
+      systemctl disable firewalld
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      chkconfig nfs on
-      service nfs start
+      systemctl enable nfs-server
+      systemctl start nfs-server
       echo "/home/ $NETWORK.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
@@ -177,14 +185,14 @@ EOF
 host 127.0.0.1
 255.255.255.0 $NETWORK.0
 EOF
-      chkconfig ypserv on
-      service rpcbind restart
-      service ypserv start
+      systemctl enable ypserv.service
+      systemctl restart  rpcbind.service
+      systemctl start  ypserv.service
       /usr/lib64/yp/ypinit -m < /dev/null
-      chkconfig ypbind on
-      chkconfig yppasswdd on
-      service ypbind start
-      service yppasswdd start
+      systemctl enable ypbind.service
+      systemctl enable yppasswdd.service
+      systemctl start  ypbind.service
+      systemctl start yppasswdd.service
       sed -i \
           -e "s/^\(passwd:     files\)/\1 nis/" \
           -e "s/^\(shadow:     files\)/\1 nis/" \
@@ -228,8 +236,8 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install httpd
-      chkconfig httpd on
-      service httpd start
+      systemctl enable httpd.service
+      systemctl start httpd.service
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -289,9 +297,9 @@ EOF
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
       echo "broadcast" >> /etc/yp.conf
-      service rpcbind restart
-      chkconfig ypbind on
-      service ypbind start
+      systemctl restart rpcbind.service
+      systemctl enable ypbind.service
+      systemctl start ypbind.service
       sed -i \
           -e "s/^\(passwd:     files\)/\1 nis/" \
           -e "s/^\(shadow:     files\)/\1 nis/" \
