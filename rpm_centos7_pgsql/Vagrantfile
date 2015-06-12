@@ -1,0 +1,74 @@
+#-*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+# NODES_COUNT set the number of nodes of your cluster.
+# Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
+# ***Warning***: vagrant is very greedy on disk, consider using the trick below if
+# running more than a few nodes.
+NODES_COUNT = (ENV["OARVAGRANT_NODES_COUNT"] || 1).to_i
+VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 512).to_i
+VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
+RELEASEBRANCH = (ENV["OARVAGRANT_CENTOS_RELEASEBRANCH"] || "stable")
+
+## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
+## and optimze the storage size of the VMs
+#require "ffi"
+#if FFI::Platform::IS_LINUX
+#  CUSTOM_PATH = File.join(File.dirname(__FILE__), "..", "misc", "vagrant-use-linked-clones")
+#  ENV["PATH"] = "#{File.absolute_path(CUSTOM_PATH)}:#{ENV["PATH"]}"
+#end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "oar-team/centos7"
+  config.vm.synced_folder ".", "/vagrant", create: true
+  config.vm.define "server", primary: true do |m|
+    m.vm.hostname = "server"
+    m.vm.network :private_network, ip: "192.168.31.10"
+    m.ssh.forward_agent = true
+    m.vm.provision :shell, path: "provision.sh", args: "server #{NODES_COUNT} #{RELEASEBRANCH}", privileged: true
+  end
+  config.vm.define "frontend" do |m|
+    m.vm.hostname = "frontend"
+    m.vm.network :private_network, ip: "192.168.31.11"
+    m.ssh.forward_agent = true
+    m.vm.provision :shell, path: "provision.sh", args: "frontend #{NODES_COUNT} #{RELEASEBRANCH}", privileged: true
+  end
+  (1..NODES_COUNT).each do |i|
+    config.vm.define "node-#{i}" do |m|
+      m.vm.hostname = "node-#{i}"
+      m.vm.network :private_network, ip: "192.168.31.#{i+100}"
+      m.ssh.forward_agent = true
+      m.vm.provision :shell, path: "provision.sh", args: "nodes #{NODES_COUNT} #{RELEASEBRANCH}", privileged: true
+    end
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = VM_MEMORY
+    v.cpus = VM_CPU
+  end
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    # install polipo
+    # vagrant plugin install vagrant-proxyconf
+    config.proxy.http     = "http://192.168.31.1:3128/"
+    config.proxy.https    = "http://192.168.31.1:3128/"
+    config.proxy.no_proxy = "localhost,127.0.0.1"
+  end
+
+  if Vagrant.has_plugin?("vagrant-cachier")
+    # vagrant plugin install vagrant-cachier
+    config.cache.scope = :box
+  end
+
+  # See: https://stackoverflow.com/questions/14715678/vagrant-insecure-by-default
+  unless Vagrant.has_plugin?("vagrant-rekey-ssh")
+    warn "------------------- SECURITY WARNING -------------------"
+    warn "Vagrant is insecure by default.  To secure your VM, run:"
+    warn "    vagrant plugin install vagrant-rekey-ssh"
+    warn "--------------------------------------------------------"
+  end
+
+end
