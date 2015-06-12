@@ -2,12 +2,12 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: A standard Debian 7 vagrant base box (amd64)
+# DESCRIPTION: A standard Debian 8 vagrant base box (amd64)
 #
 #==============================================================================
 
 ---
-extend: virtualbox/debian8-vagrant-amd64.yaml
+extend: default/vagrant/debian8
 
 global:
 

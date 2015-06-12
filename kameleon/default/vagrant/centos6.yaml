@@ -2,14 +2,15 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: A standard Debian 7 vagrant base box (amd64)
+# DESCRIPTION: A standard Centos 6 vagrant base box.
 #
 #==============================================================================
-
 ---
-extend: default/vagrant/debian7
+extend: ../virtualbox/centos6.yaml
 
 global:
+  ## User varibales : used by the recipe
+  user_name: vagrant
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
@@ -18,10 +19,15 @@ bootstrap:
 #== Install and configuration steps
 setup:
   - "@base"
+  - install_software:
+    - packages: >
+        gcc make gcc-c++ kernel-devel-`uname -r` zlib-devel
+        openssl-devel readline-devel sqlite-devel perl wget dkms nfs-utils
+  - install_virtualbox_guestaddons
+  - setup_vagrant_box
 
 #== Export the generated appliance in the format of your choice
 export:
   - disable_checkpoint
   - vagrant_save_appliance:
-    - memory_size: "256"
     - output: "$$kameleon_cwd/$${kameleon_recipe_name}"
