@@ -62,12 +62,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.cache.scope = :box
   end
 
-  # See: https://stackoverflow.com/questions/14715678/vagrant-insecure-by-default
-  unless Vagrant.has_plugin?("vagrant-rekey-ssh")
-    warn "------------------- SECURITY WARNING -------------------"
-    warn "Vagrant is insecure by default.  To secure your VM, run:"
-    warn "    vagrant plugin install vagrant-rekey-ssh"
-    warn "--------------------------------------------------------"
-  end
-
 end
