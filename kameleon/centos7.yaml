@@ -27,7 +27,4 @@ setup:
 
 #== Export the generated appliance in the format of your choice
 export:
-  - disable_checkpoint
-  - vagrant_save_appliance:
-    - memory_size: "256"
-    - output: "$$kameleon_cwd/$${kameleon_recipe_name}"
+  - "@base"
