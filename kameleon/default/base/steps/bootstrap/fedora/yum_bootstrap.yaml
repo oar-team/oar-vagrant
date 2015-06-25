@@ -36,6 +36,35 @@
 - install_packages:
   - exec_out: chroot $$rootfs yum install --releasever=$$release -y $$include_pkgs
 
+- set_interface:
+  - write_out:
+    - $$rootfs/etc/sysconfig/network-scripts/ifcfg-eth0
+    - |
+      DEVICE="eth0"
+      BOOTPROTO=dhcp
+      NM_CONTROLLED="no"
+      PERSISTENT_DHCLIENT=1
+      ONBOOT="yes"
+      TYPE=Ethernet
+      DEFROUTE=yes
+      PEERDNS=yes
+      PEERROUTES=yes
+      IPV4_FAILURE_FATAL=yes
+      IPV6INIT=yes
+      IPV6_AUTOCONF=yes
+      IPV6_DEFROUTE=yes
+      IPV6_PEERDNS=yes
+      IPV6_PEERROUTES=yes
+      IPV6_FAILURE_FATAL=no
+      NAME="eth0"
+  - write_out:
+    - $$rootfs/etc/sysconfig/network
+    - |
+      #
+
+- enable_network:
+  - exec_out: chroot $$rootfs chkconfig network on
+
 - umount_chroot:
   - on_clean:
     - umount_out: $$rootfs/sys

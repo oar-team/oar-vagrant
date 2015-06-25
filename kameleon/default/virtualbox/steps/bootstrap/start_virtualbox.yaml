@@ -25,7 +25,7 @@
     - exec_in: echo Shutdown
     #  attempt to gracefully shut down the machine
     - exec_in: |
-        shutdown -h now &
+        bash -c "sleep 2; shutdown -h now" &
     - exec_local: |
         sleep 5
         if VBoxManage list runningvms | grep -q $$virtualbox_vmid; then

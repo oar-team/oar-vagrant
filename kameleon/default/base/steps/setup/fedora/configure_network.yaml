@@ -6,9 +6,6 @@
 - set_hostname:
   - exec_in: echo $$hostname > /etc/hostname
 
-- enable_network:
-  - exec_in: chkconfig network on
-
 - set_host:
   - write_in:
     - /etc/hosts
@@ -20,19 +17,31 @@
   - write_in:
     - /etc/sysconfig/network-scripts/ifcfg-eth0
     - |
-      DEVICE=eth0
+      DEVICE="eth0"
       BOOTPROTO=dhcp
-      ONBOOT=yes
-      HOSTNAME=$$hostname
-      NM_CONTROLLED=no
+      NM_CONTROLLED="no"
+      PERSISTENT_DHCLIENT=1
+      ONBOOT="yes"
       TYPE=Ethernet
+      DEFROUTE=yes
+      PEERDNS=yes
+      PEERROUTES=yes
+      IPV4_FAILURE_FATAL=yes
+      IPV6INIT=yes
+      IPV6_AUTOCONF=yes
+      IPV6_DEFROUTE=yes
+      IPV6_PEERDNS=yes
+      IPV6_PEERROUTES=yes
+      IPV6_FAILURE_FATAL=no
+      NAME="eth0"
       MTU=$$mtu
-  - write_in:
-    - /etc/sysconfig/network
+  - write_out:
+    - $$rootfs/etc/sysconfig/network
     - |
-      NETWORKING=yes
+      #
       HOSTNAME=$$hostname
 
-- enable_dhcp_service:
+- enable_network:
   - exec_in: systemctl disable NetworkManager.service  2>&1
+  - exec_in: chkconfig network on
   - exec_in: systemctl enable network.service  2>&1

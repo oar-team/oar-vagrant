@@ -12,9 +12,6 @@ extend: centos6.yaml
 global:
   # Distribution
   release: 7
-  bootstrap_packages: >
-    findutils yum util-linux dhclient vim-minimal net-tools openssh-server
-    kernel kernel-devel acpid NetworkManager
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
