@@ -250,6 +250,7 @@ EOF
           -e "s/\(\$CONF\['db_port'\]=\).*/\1\"3306\";/g" \
           -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
           /etc/oar/drawgantt-config.inc.php
+      a2enmod cgi
       a2enconf oar-web-status
       service apache2 restart
       touch /tmp/stamp.${stamp// /_}
