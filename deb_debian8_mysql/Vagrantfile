@@ -4,13 +4,19 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# IP Network to use:
+NETWORK_PREFIX = ENV["OARVAGRANT_NETWORK_PREFIX"] || "192.168.36"
+
 # NODES_COUNT set the number of nodes of your cluster.
 # Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
 # ***Warning***: vagrant is very greedy on disk, consider using the trick below if
 # running more than a few nodes.
 NODES_COUNT = (ENV["OARVAGRANT_NODES_COUNT"] || 1).to_i
+
 VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 512).to_i
 VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
+OAR_FTP_HOST = ENV["OAR_FTP_HOST"] || "oar-ftp.imag.fr"
+OAR_FTP_DISTRIB = ENV["OAR_FTP_DISTRIB"]
 
 ## Uncomment the following lines to use VirtualBox Linked Clone VMS trick
 ## and optimze the storage size of the VMs
@@ -25,22 +31,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.insert_key = false
   config.vm.define "server", primary: true do |m|
     m.vm.hostname = "server"
-    m.vm.network :private_network, ip: "192.168.36.10"
+    m.vm.network :private_network, ip: "#{NETWORK_PREFIX}.10"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "server #{NODES_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "server #{NETWORK_PREFIX} #{NODES_COUNT} #{OAR_FTP_HOST} #{OAR_FTP_DISTRIB}", privileged: true
   end
   config.vm.define "frontend" do |m|
     m.vm.hostname = "frontend"
-    m.vm.network :private_network, ip: "192.168.36.11"
+    m.vm.network :private_network, ip: "#{NETWORK_PREFIX}.11"
     m.ssh.forward_agent = true
-    m.vm.provision :shell, path: "provision.sh", args: "frontend #{NODES_COUNT}", privileged: true
+    m.vm.provision :shell, path: "provision.sh", args: "frontend #{NETWORK_PREFIX} #{NODES_COUNT} #{OAR_FTP_HOST} #{OAR_FTP_DISTRIB}", privileged: true
   end
   (1..NODES_COUNT).each do |i|
     config.vm.define "node-#{i}" do |m|
       m.vm.hostname = "node-#{i}"
-      m.vm.network :private_network, ip: "192.168.36.#{i+100}"
+      m.vm.network :private_network, ip: "#{NETWORK_PREFIX}.#{i+100}"
       m.ssh.forward_agent = true
-      m.vm.provision :shell, path: "provision.sh", args: "nodes #{NODES_COUNT}", privileged: true
+      m.vm.provision :shell, path: "provision.sh", args: "nodes #{NETWORK_PREFIX} #{NODES_COUNT} #{OAR_FTP_HOST} #{OAR_FTP_DISTRIB}", privileged: true
     end
   end
 
@@ -52,8 +58,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   if Vagrant.has_plugin?("vagrant-proxyconf")
     # install polipo
     # vagrant plugin install vagrant-proxyconf
-    config.proxy.http     = "http://192.168.36.1:3128/"
-    config.proxy.https    = "http://192.168.36.1:3128/"
+    config.proxy.http     = "http://#{NETWORK_PREFIX}.1:3128/"
+    config.proxy.https    = "http://#{NETWORK_PREFIX}.1:3128/"
     config.proxy.no_proxy = "localhost,127.0.0.1"
   end
 
