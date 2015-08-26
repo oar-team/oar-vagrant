@@ -3,21 +3,23 @@
 set -e
 
 export BOX=$1
-export HOSTS_COUNT=$2
-export RELEASEBRANCH=${3:-stable}
-export NETWORK="192.168.32"
-if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
-  echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
+export NETWORK_PREFIX=$2
+export HOSTS_COUNT=$3
+export OAR_FTP_HOST=$4
+export OAR_FTP_DISTRIB=$5
+
+if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
+  echo "Error: syntax error, usage is $0 BOX NETWORK_PREFIX HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
   exit 1
 fi
 
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo $NETWORK.10 server >> /etc/hosts 
-  echo $NETWORK.11 frontend >> /etc/hosts 
+  echo ${NETWORK_PREFIX}.10 server >> /etc/hosts
+  echo ${NETWORK_PREFIX}.11 frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts 
+    echo ${NETWORK_PREFIX}.$((100+i)) node-$i >> /etc/hosts
   done
   touch /tmp/stamp.${stamp// /_}
 )
@@ -29,15 +31,15 @@ stamp="provision EPEL repo"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR-Testing repo"
+stamp="provision OAR ${OAR_FTP_DISTRIB:-testing} repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   cat <<EOF | tee /etc/yum.repos.d/OAR.repo
 [OAR]
 name=OAR
-baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/$RELEASEBRANCH/
+baseurl=http://$OAR_FTP_HOST/oar/2.5/rpm/centos6/${OAR_FTP_DISTRIB:-testing}/
 gpgcheck=1
-gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+gpgkey=http://$OAR_FTP_HOST/oar/oarmaster.asc
 enabled=0
 EOF
   touch /tmp/stamp.${stamp// /_}
@@ -103,6 +105,34 @@ case $BOX in
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="install oar-web-status"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y --enablerepo=OAR oar-web-status oar-web-status-mysql
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="set oar-web-status configs"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      sed -i \
+          -e "s/^\(username =\).*/\1 oar_ro/" \
+          -e "s/^\(password =\).*/\1 oar_ro/" \
+          -e "s/^\(dbtype =\).*/\1 mysql/" \
+          -e "s/^\(dbport =\).*/\1 3306/" \
+          -e "s/^\(hostname =\).*/\1 server/" \
+          /etc/oar/monika.conf
+      sed -i \
+          -e "s/\$CONF\['db_type'\]=\"pg\"/\$CONF\['db_type'\]=\"mysql\"/g" \
+          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
+          -e "s/\$CONF\['db_port'\]=\"5432\"/\$CONF\['db_port'\]=\"3306\"/g" \
+          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
+          /etc/oar/drawgantt-config.inc.php
+      chkconfig httpd on
+      service httpd start
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   frontend)
     stamp="create some users"
@@ -150,7 +180,7 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       chkconfig nfs on
       service nfs start
-      echo "/home/ $NETWORK.0/24(rw,no_root_squash)" > /etc/exports
+      echo "/home/ ${NETWORK_PREFIX}.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
     )
@@ -166,7 +196,7 @@ EOF
       echo "broadcast" >> /etc/yp.conf
       cat <<EOF > /var/yp/securenets
 host 127.0.0.1
-255.255.255.0 $NETWORK.0
+255.255.255.0 ${NETWORK_PREFIX}.0
 EOF
       chkconfig ypserv on
       service rpcbind restart
@@ -191,13 +221,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install oar-web-status"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install -y --enablerepo=OAR oar-web-status oar-web-status-mysql
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="set oar config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -215,41 +238,15 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install httpd"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      yum install httpd
-      chkconfig httpd on
-      service httpd start
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="set oar-web-status configs"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i \
-          -e "s/^\(username =\).*/\1 oar_ro/" \
-          -e "s/^\(password =\).*/\1 oar_ro/" \
-          -e "s/^\(dbtype =\).*/\1 mysql/" \
-          -e "s/^\(dbport =\).*/\1 3306/" \
-          -e "s/^\(hostname =\).*/\1 server/" \
-          /etc/oar/monika.conf
-      sed -i \
-          -e "s/\$CONF\['db_type'\]=\"pg\"/\$CONF\['db_type'\]=\"mysql\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"5432\"/\$CONF\['db_port'\]=\"3306\"/g" \
-          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
-          /etc/oar/drawgantt-config.inc.php
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="install restful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y --enablerepo=OAR oar-restful-api
-      yum install -y perl-YAML oidentd perl-FCGI
+      yum install -y oidentd
       sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
       sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
+      chkconfig httpd on
+      chkconfig oidentd on
       service oidentd start
       service httpd restart
      touch /tmp/stamp.${stamp// /_}
@@ -266,7 +263,7 @@ EOF
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo "$NETWORK.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
     )
