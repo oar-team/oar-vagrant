@@ -10,8 +10,8 @@ export OAR_FTP_DISTRIB=$5
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
 
-if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
-  echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
+if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
+  echo "Error: syntax error, usage is $0 BOX NETWORK_PREFIX HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
   exit 1
 fi
 
