@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Note: there seems to actually be no much speedup gain with parallelizing the up
+# stage... 
+echo "########### Starting Vagrant VMs in parallel with no provision..."
+vagrant up --no-provision server &
+vagrant up --no-provision frontend &
+i=1
+while [ $i -le ${OARVAGRANT_NODES_COUNT:-1} ]; do
+  vagrant up --no-provision node-$i & 
+  ((i++))
+done
+wait
+
+echo "########### Provisioning server and frontend sequentially..."
+vagrant provision server
+vagrant provision frontend
+echo "########### Provisioning all nodes VMs in parallel..."
+i=1
+while [ $i -le ${OARVAGRANT_NODES_COUNT:-1} ]; do
+  vagrant provision node-$i & 
+  ((i++))
+done
+wait

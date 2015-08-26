@@ -1,7 +1,11 @@
 #!/bin/bash
 VBOXMANAGE=/usr/bin/VBoxManage
-LOGFILE=/tmp/vagrant/vboxmanage.$(date +%s)
+LOGFILE=/tmp/oar-vagrant/vboxmanage.$(date +%s)
+LOCKFILE=/tmp/oar-vagrant/vboxmanage.lock
+exec 3<$LOCKFILE
 mkdir -p ${LOGFILE%/*}
+mkdir -p ${LOCKFILE%/*}
+touch $LOCKFILE
 if [ "$1" == "import" -a "$2" != "-n" ]; then
   echo -e "Initial command:\n $ $0 $@" >> $LOGFILE
   declare -a opts=("$@") ;
@@ -29,7 +33,11 @@ if [ "$1" == "import" -a "$2" != "-n" ]; then
   else
     echo "Golden $golden_vmname already exists, reusing it !" >> $LOGFILE
   fi
+  echo "Locking $LOCKFILE..." >> $LOGFILE
+  flock 3
   $VBOXMANAGE snapshot $golden_vmname take $vmname
   exec $VBOXMANAGE clonevm $golden_vmname --options link --snapshot $vmname --name $vmname --register
+  echo "Unlocking $LOCKFILE..." >> $LOGFILE
+  flock -u 3
 fi
 exec $VBOXMANAGE "$@"
