@@ -2,24 +2,22 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: Debian 8 (Jessie) base system built with virtualbox.
+# DESCRIPTION: Debian 7 (Wheezy) base system built with qemu-kvm.
 #
 #==============================================================================
 ---
-extend: ../qemu/debian8.yaml
-checkpoint: virtualbox.yaml
+extend: ../chroot/debian7.yaml
+checkpoint: qemu.yaml
 
 # Global variables use by Kameleon engine and the steps
 global:
-  # appliance options
-  image_format: vmdk
-  # Allowed formats are: tar.gz, tar.bz2, tar.xz, tar.lzo, qcow, qcow2, qed, vdi, raw, vmdk
-  appliance_formats: vmdk tar.gz
-
-  ## VirtualBox options
-  virtualbox_memory_size: 768
-  virtualbox_os_type: Debian_64
-  virtualbox_vmid: $${kameleon_recipe_name}_$${kameleon_short_uuid}
+  # qemu options
+  qemu_enable_kvm: "$(egrep '(vmx|svm)' /proc/cpuinfo > /dev/null && echo true)"
+  qemu_cpu: 2
+  qemu_memory_size: 768
+  qemu_monitor_socket: $$kameleon_cwd/qemu_monitor.socket
+  qemu_arch: $$arch
+  qemu_pidfile: $$kameleon_cwd/qemu.pid
 
   ssh_config_file: $$kameleon_cwd/ssh_config
   out_context:
@@ -36,7 +34,7 @@ global:
 bootstrap:
   - download_kameleon_helpers
   - prepare_appliance
-  - start_virtualbox
+  - start_qemu
 
 # Install and configuration steps
 setup:
@@ -45,5 +43,4 @@ setup:
 
 # Export the generated appliance in the format of your choice
 export:
-  - disable_checkpoint
   - "@base"

@@ -2,24 +2,23 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: A standard Debian 8 vagrant base box (amd64)
+# DESCRIPTION: oar-team/debian8 vagrant base box (amd64)
 #
 #==============================================================================
 
 ---
-extend: default/vagrant/debian8
+extend: default/vagrant/debian8.yaml
 
 global:
+    # You can see the base template `default/vagrant/debian8.yaml` to know the
+    # variables that you can override
 
-#== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - "@base"
 
-#== Install and configuration steps
 setup:
   - "@base"
 
-#== Export the generated appliance in the format of your choice
 export:
   - disable_checkpoint
   - vagrant_save_appliance:

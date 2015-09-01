@@ -6,51 +6,20 @@
 #
 #==============================================================================
 ---
-extend: ../base/debian.yaml
-# Loads some helpful aliases
-aliases: defaults.yaml
-# Enables virtualbox checkpoint
+extend: ../qemu/debian7.yaml
 checkpoint: virtualbox.yaml
-#== Global variables use by Kameleon engine and the steps
-global:
-  ## User varibales : used by the recipe
-  user_name: kameleon
-  user_password: $$user_name
 
-  # Distribution
-  distrib: debian
-  release: wheezy
-  arch: amd64
-  kernel_arch: $$arch
-  hostname: kameleon-$$distrib
+# Global variables use by Kameleon engine and the steps
+global:
+  # appliance options
+  image_format: vmdk
+  # Allowed formats are: tar.gz, tar.bz2, tar.xz, tar.lzo, qcow, qcow2, qed, vdi, raw, vmdk
+  appliance_formats: vmdk tar.gz
 
   ## VirtualBox options
   virtualbox_memory_size: 768
-  virtualbox_ssh_port: 55423
   virtualbox_os_type: Debian_64
   virtualbox_vmid: $${kameleon_recipe_name}_$${kameleon_short_uuid}
-  virtualbox_image_size: 10000  ## megabytes
-  virtualbox_image_disk: $$kameleon_cwd/base_$$kameleon_recipe_name.vdi
-
-  ## Kameleon iso bootstrap
-  boot2kameleon_url: http://kameleon.imag.fr/iso/boot2debian/debian-jessie-x86_64-insecure.iso
-  insecure_ssh_key_url: http://kameleon.imag.fr/iso/boot2debian/keys/insecure_id_rsa
-
-  ## Rootfs options
-  disk_device: /dev/sda
-  rootfs: /rootfs
-  filesystem_type: ext4
-
-  ## System variables. Required by kameleon engine
-  # Include specific steps
-  include_steps:
-    - $$distrib/$$release
-    - $$distrib
-
-  # Apt recipe options
-  apt_repository: http://ftp.debian.org/debian/
-  apt_enable_contrib: true
-  apt_enable_nonfree: true
 
   ssh_config_file: $$kameleon_cwd/ssh_config
   out_context:
@@ -63,41 +32,18 @@ global:
     workdir: /root/kameleon_workdir
     proxy_cache: 10.0.2.2
 
-  bootstrap_packages: >
-    bsdutils ca-certificates locales man-db less libui-dialog-perl dialog
-    isc-dhcp-client ifupdown iptables iputils-ping iproute netbase net-tools
-    psmisc openssh-server acpid acpi-support-base sysvinit
-    linux-image-$$kernel_arch pciutils
-
-  setup_packages: >
-    sudo vim bash-completion curl resolvconf extlinux bzip2 dialog
-
-#== Bootstrap the new system and create the 'in_context'
+# Bootstrap the new system and create the 'in_context'
 bootstrap:
-  - enable_checkpoint
-  - prepare_virtualbox
+  - download_kameleon_helpers
+  - prepare_appliance
   - start_virtualbox
-  - install_requirements:
-    - packages: parted e2fsprogs debootstrap extlinux
-  - initialize_disk
-  - "@base"
-  - reboot_virtualbox
 
-#== Install and configuration steps
+# Install and configuration steps
 setup:
-- "@base"
+  - enable_checkpoint
+  - "@base"
 
-#== Export the generated appliance in the format of your choice
+# Export the generated appliance in the format of your choice
 export:
   - disable_checkpoint
-  - virtualbox_save_appliance:
-    - output: "$$kameleon_cwd/$${kameleon_recipe_name}"
-    - save_as_ova
-    # - save_as_vdi
-    # - save_as_vmdk
-    # - save_as_tar_gz
-    # - save_as_tar_xz
-    # - save_as_tar_bz2
-    # - save_as_raw
-    # - save_as_qcow2
-    # - save_as_qed
+  - "@base"

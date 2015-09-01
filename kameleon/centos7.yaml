@@ -2,29 +2,28 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: A standard Centos 7 vagrant base box (amd64)
+# DESCRIPTION: oar-team/centos vagrant base box (amd64)
 #
 #==============================================================================
 
 ---
-extend: default/vagrant/centos7
+extend: default/vagrant/centos7.yaml
 
 global:
-  ## User varibales : used by the recipe
-  user_name: vagrant
-
+    # You can see the base template `default/vagrant/centos7.yaml` to know the
+    # variables that you can override
   # SELinux configuration
   selinux: disabled  ## Can take one of these three values: enforcing, permissive or disabled
   selinuxtype: targeted  ## Possible values are: strict, targeted
 
-#== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - "@base"
 
-#== Install and configuration steps
 setup:
   - "@base"
 
-#== Export the generated appliance in the format of your choice
 export:
-  - "@base"
+  - disable_checkpoint
+  - vagrant_save_appliance:
+    - memory_size: "256"
+    - output: "$$kameleon_cwd/$${kameleon_recipe_name}"
