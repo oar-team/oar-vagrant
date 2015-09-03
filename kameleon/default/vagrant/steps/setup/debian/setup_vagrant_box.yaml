@@ -17,9 +17,6 @@
       apt-get install puppet -y --force-yes
       rm -f $KAMELEON_WORKDIR/puppetlabs-release-stable.deb
 
-- install_chef:
-  - exec_in: curl -L https://www.opscode.com/chef/install.sh -k | bash
-
 - copy_insecure_sshkey:
   - exec_in: mkdir -pm 700 /home/$$user_name/.ssh/
   - download_file_in:
@@ -42,7 +39,8 @@
       PasswordAuthentication no
       AddressFamily inet
   - exec_in: chmod 0600 /home/$$user_name/.ssh/config
-  - exec_in: rsync -ah /home/$$user_name/.ssh/ /root/.ssh/
+  - exec_in: rsync -ah /home/$$user_name/.ssh/ /root/.ssh
+  - exec_in: cat /root/.ssh/.kameleon_authorized_keys >> /root/.ssh/authorized_keys
   - exec_in: chown "$$user_name:$$user_name" -R /home/$$user_name
 
 - customize_motd:
@@ -53,9 +51,3 @@
   - exec_in: |
       echo "Adding a 2 sec delay to the interface up, to make the dhclient happy"
       echo "pre-up sleep 2" >> /etc/network/interfaces
-
-- nullify_freespace:
-  - exec_in: |
-      echo "Nullify freespace..."
-      dd if=/dev/zero of=/bigemptyfile bs=1M 2>&1 >/dev/null || true
-      rm -f /bigemptyfile
