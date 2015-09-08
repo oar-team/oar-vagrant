@@ -22,7 +22,7 @@ RELEASEBRANCH = (ENV["OARVAGRANT_CENTOS_RELEASEBRANCH"] || "stable")
 #end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "oar-team/centos7"
+  config.vm.box = "matyunin/centos7"
   config.ssh.insert_key = false
   config.vm.synced_folder ".", "/vagrant", create: true
   config.vm.define "server", primary: true do |m|
