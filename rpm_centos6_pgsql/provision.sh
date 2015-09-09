@@ -336,7 +336,7 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       cat <<EOF >> /etc/security/access.conf
 + : ALL : LOCAL
-- : ALL EXCEPT root : ALL oar : ALL
+- : ALL EXCEPT root oar vagrant : ALL
 EOF
       sed -i -e "s/^\(account[[:space:]]\+required[[:space:]]\+pam_\)\(unix.so*\)$/\1\2\n\1access.so/" /etc/pam.d/password-auth
       touch /tmp/stamp.${stamp// /_}
