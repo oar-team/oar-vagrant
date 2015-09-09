@@ -28,6 +28,7 @@ OAR_FTP_DISTRIB = ENV["OAR_FTP_DISTRIB"]
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oar-team/debian8"
+  config.vm.box_url = "http://oar-old.imag.fr/vagrant/centos8.box"
   config.ssh.insert_key = false
   config.vm.define "server", primary: true do |m|
     m.vm.hostname = "server"
