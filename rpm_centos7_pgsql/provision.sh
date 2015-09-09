@@ -195,8 +195,9 @@ EOF
     stamp="configure NFS server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      systemctl enable nfs-server
-      systemctl start nfs-server
+      yum install -y nfs-utils rpcbind
+      systemctl enable nfs-server rpcbind
+      systemctl start rpcbind nfs-server
       echo "/home/ ${NETWORK_PREFIX}.0/24(rw,no_root_squash)" > /etc/exports
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
@@ -210,10 +211,11 @@ EOF
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
-      echo "broadcast" >> /etc/yp.conf
+      echo "ypserver frontend" >> /etc/yp.conf
       cat <<EOF > /var/yp/securenets
 host 127.0.0.1
 255.255.255.0 ${NETWORK_PREFIX}.0
+0.0.0.0 0.0.0.0
 EOF
       systemctl enable ypserv.service
       systemctl restart  rpcbind.service
@@ -279,6 +281,7 @@ EOF
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      yum install -y nfs-utils rpcbind
       echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
@@ -292,7 +295,7 @@ EOF
       echo "NISDOMAIN=\"$NISDOMAIN\"" >> /etc/sysconfig/network
       domainname $NISDOMAIN
       ypdomainname $NISDOMAIN
-      echo "broadcast" >> /etc/yp.conf
+      echo "ypserver frontend" >> /etc/yp.conf
       systemctl restart rpcbind.service
       systemctl enable ypbind.service
       systemctl start ypbind.service
