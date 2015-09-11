@@ -7,6 +7,7 @@ export NETWORK_PREFIX=$2
 export HOSTS_COUNT=$3
 export OAR_FTP_HOST=$4
 export OAR_FTP_DISTRIB=$5
+export DEBIAN_EXTRA_DISTRIB=$6
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
 
@@ -41,27 +42,41 @@ stamp="Drop Puppet repository"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision Debian unstable repo for OAR packages"
+stamp="Setup APT sources and preferences packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  [ -r "/vagrant/distrib" ] && distrib=$(< /vagrant/distrib)
-  cat <<EOF > /etc/apt/sources.list.d/oar.list
-deb http://$OAR_FTP_HOST/oar/2.5/debian/ ${OAR_FTP_DISTRIB:-jessie-backports_beta} main
+  if [ -n "$OAR_FTP_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/sources.list.d/oar-ftp.list
+deb http://$OAR_FTP_HOST/oar/2.5/debian/ $OAR_FTP_DISTRIB main
 EOF
-  wget -q -O- http://$OAR_FTP_HOST/oar/oarmaster.asc | sudo apt-key add -
-  cat <<EOF > /etc/apt/sources.list.d/sid.list
-deb http://ftp.debian.org/debian/ sid main contrib non-free
+    wget -q -O- http://$OAR_FTP_HOST/oar/oarmaster.asc | sudo apt-key add -
+  fi
+  if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/sources.list.d/$DEBIAN_EXTRA_DISTRIB.list
+deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
+EOF
+  fi
+  cat <<EOF > /etc/apt/sources.list.d/jessie-backports.list
+deb http://ftp.debian.org/debian/ jessie-backports main
 EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "jessie";
 EOF
-  cat <<EOF > /etc/apt/preferences.d/take-last-oar-devel-packages
+  if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/preferences.d/oar-packages-preferences
+Package: oar-* liboar-perl
+Pin: release n=$DEBIAN_EXTRA_DISTRIB
+Pin-Priority: 999
+
+EOF
+  fi    
+  cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
 Pin: origin "$OAR_FTP_HOST"
 Pin-Priority: 999
 
 Package: oar-* liboar-perl
-Pin: release n=sid
+Pin: release n=jessie-backports
 Pin-Priority: 999
 
 Package: *
@@ -69,7 +84,7 @@ Pin: origin "$OAR_FTP_HOST"
 Pin-Priority: -1
 
 Package: *
-Pin: release n=sid
+Pin: release n=jessie-backports
 Pin-Priority: -1
 
 Package: *
