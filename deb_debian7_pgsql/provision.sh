@@ -3,24 +3,36 @@
 set -e
 
 export BOX=$1
-export HOSTS_COUNT=$2
-export NETWORK="192.168.34"
+export NETWORK_PREFIX=$2
+export HOSTS_COUNT=$3
+export OAR_FTP_HOST=$4
+export OAR_FTP_DISTRIB=$5
+export DEBIAN_EXTRA_DISTRIB=$6
 export DEBIAN_FRONTEND=noninteractive
-export PGSQL_VERSION=9.1
 export OAR_APT_OPTS=""
-if [ -z "$BOX" -o -z "$HOSTS_COUNT" ]; then
-  echo "Error: syntax error, usage is $0 BOX HOSTS_COUNT" 1>&2
+export PGSQL_VERSION=9.1
+
+if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
+  echo "Error: syntax error, usage is $0 BOX NETWORK_PREFIX HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
   exit 1
 fi
 
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo $NETWORK.10 server >> /etc/hosts
-  echo $NETWORK.11 frontend >> /etc/hosts
+  echo ${NETWORK_PREFIX}.10 server >> /etc/hosts
+  echo ${NETWORK_PREFIX}.11 frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo $NETWORK.$((100+i)) node-$i >> /etc/hosts
+    echo ${NETWORK_PREFIX}.$((100+i)) node-$i >> /etc/hosts
   done
+  touch /tmp/stamp.${stamp// /_}
+)
+
+stamp="Drop apt sources repository"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  grep  -v -e "^deb-src" /etc/apt/sources.list > /etc/apt/sources.list.new
+  mv /etc/apt/sources.list.new /etc/apt/sources.list
   touch /tmp/stamp.${stamp// /_}
 )
 
@@ -31,27 +43,49 @@ stamp="Drop Puppet repository"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision Debian unstable repo for OAR packages"
+stamp="Setup APT sources and preferences packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat <<EOF > /etc/apt/sources.list.d/oar.list
-deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main
+  if [ -n "$OAR_FTP_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/sources.list.d/oar-ftp.list
+deb http://$OAR_FTP_HOST/oar/2.5/debian/ $OAR_FTP_DISTRIB main
 EOF
-  wget -q -O- http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
-# Uncomment to take package for Debian.org/sid
-#  cat <<EOF > /etc/apt/sources.list.d/sid.list
-#deb http://ftp.debian.org/debian/ sid main contrib non-free
-#EOF
+    wget -q -O- http://$OAR_FTP_HOST/oar/oarmaster.asc | sudo apt-key add -
+  fi
+  if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/sources.list.d/$DEBIAN_EXTRA_DISTRIB.list
+deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
+EOF
+  fi
+  cat <<EOF > /etc/apt/sources.list.d/wheezy-backports.list
+deb http://ftp.debian.org/debian/ wheezy-backports main
+EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "wheezy";
 EOF
-  cat <<EOF > /etc/apt/preferences.d/take-last-oar-devel-packages
+  if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
+    cat <<EOF > /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
-Pin: origin "oar-ftp.imag.fr"
+Pin: release n=$DEBIAN_EXTRA_DISTRIB
+Pin-Priority: 999
+
+EOF
+  fi    
+  cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
+Package: oar-* liboar-perl
+Pin: origin "$OAR_FTP_HOST"
+Pin-Priority: 999
+
+Package: oar-* liboar-perl
+Pin: release n=wheezy-backports
 Pin-Priority: 999
 
 Package: *
-Pin: origin "oar-ftp.imag.fr"
+Pin: origin "$OAR_FTP_HOST"
+Pin-Priority: -1
+
+Package: *
+Pin: release n=wheezy-backports
 Pin-Priority: -1
 
 Package: *
@@ -79,7 +113,7 @@ case $BOX in
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
 #Access to OAR database
-host oar all $NETWORK.0/24 md5
+host oar all ${NETWORK_PREFIX}.0/24 md5
 EOF
       service postgresql restart
       touch /tmp/stamp.${stamp// /_}
@@ -134,6 +168,35 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="install oar-web-status"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="set oar-web-status configs"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      sed -i \
+          -e "s/^\(username =\).*/\1 oar_ro/" \
+          -e "s/^\(password =\).*/\1 oar_ro/" \
+          -e "s/^\(dbtype =\).*/\1 psql/" \
+          -e "s/^\(dbport =\).*/\1 5432/" \
+          -e "s/^\(hostname =\).*/\1 server/" \
+          /etc/oar/monika.conf
+      sed -i \
+          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
+          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
+          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
+          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
+          /etc/oar/drawgantt-config.inc.php
+      a2enmod cgi
+      a2enconf oar-web-status
+      service apache2 restart
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   frontend)
     stamp="create some users"
@@ -180,7 +243,7 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
-      echo "/home/ $NETWORK.0/24(rw,no_subtree_check)" > /etc/exports
+      echo "/home/ ${NETWORK_PREFIX}.0/24(rw,no_subtree_check)" > /etc/exports
       service nfs-kernel-server restart
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
@@ -209,13 +272,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install oar-web-status"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="set oar config"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -233,36 +289,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="set oar-web-status configs"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i \
-          -e "s/^\(username =\).*/\1 oar_ro/" \
-          -e "s/^\(password =\).*/\1 oar_ro/" \
-          -e "s/^\(dbtype =\).*/\1 psql/" \
-          -e "s/^\(dbport =\).*/\1 5432/" \
-          -e "s/^\(hostname =\).*/\1 server/" \
-          /etc/oar/monika.conf
-      sed -i \
-          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
-          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
-          /etc/oar/drawgantt-config.inc.php
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="install restful api"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-restful-api libapache2-mod-fastcgi oidentd
-      a2enmod ident
-      a2enmod rewrite
-      a2enmod headers
-      service apache2 restart
-      touch /tmp/stamp.${stamp// /_}
-    )
-
     stamp="setup ssh for oar user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -270,11 +296,28 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="install OAR RESTful api"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd
+      a2enmod ident
+      a2enmod rewrite
+      a2enmod headers
+      a2enmod fastcgi
+      a2enmod suexec
+      sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
+      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
+      sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
+      a2enconf oar-restful-api
+      service apache2 restart
+      touch /tmp/stamp.${stamp// /_}
+    )
+
   ;;
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo "$NETWORK.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
     )
