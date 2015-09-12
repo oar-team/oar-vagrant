@@ -31,13 +31,13 @@ stamp="provision EPEL repo"
   touch /tmp/stamp.${stamp// /_}
 )
 
-stamp="provision OAR ${OAR_FTP_DISTRIB:-testing} repo"
+stamp="provision OAR ${OAR_FTP_DISTRIB:-stable} repo"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   cat <<EOF | tee /etc/yum.repos.d/OAR.repo
 [OAR]
 name=OAR
-baseurl=http://$OAR_FTP_HOST/oar/2.5/rpm/centos7/${OAR_FTP_DISTRIB:-testing}/
+baseurl=http://$OAR_FTP_HOST/oar/2.5/rpm/centos7/${OAR_FTP_DISTRIB:-stable}/
 gpgcheck=1
 gpgkey=http://$OAR_FTP_HOST/oar/oarmaster.asc
 enabled=0
