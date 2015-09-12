@@ -45,6 +45,14 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="stop firewalld"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  systemctl stop firewalld
+  systemctl disable firewalld
+  touch /tmp/stamp.${stamp// /_}
+)
+
 case $BOX in
   server)
     stamp="install and configure postgresql server"
@@ -181,14 +189,6 @@ fi
 EOF
         chown user$i:users /home/user$i -R
       done
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="stop firewalld"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      systemctl stop firewalld
-      systemctl disable firewalld
       touch /tmp/stamp.${stamp// /_}
     )
 
