@@ -257,18 +257,14 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
- #    stamp="install restful api"
-#    [ -e /tmp/stamp.${stamp// /_} ] || (
-#      echo -ne "##\n## $stamp\n##\n" ; set -x
-#      yum install -y --enablerepo=OAR oar-restful-api
-#      yum install -y perl-YAML oidentd perl-FCGI
-#      sed -i -e "s,#\(LoadModule ident_module modules/mod_ident.so\),\1," /etc/httpd/conf/httpd.conf
-#      sed -i -e 's/\(OIDENTD_OPTIONS=\).*/\1"-a :: -q -u nobody -g nobody"/' /etc/sysconfig/oidentd
-#      systemctl start oidentd.service
-#      systemctl enable httpd.service
-#      systemctl start httpd.service
-#     touch /tmp/stamp.${stamp// /_}
-#    )
+    stamp="install restful api"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      yum install -y --enablerepo=OAR oar-restful-api
+      systemctl enable httpd.service
+      systemctl start httpd.service
+     touch /tmp/stamp.${stamp// /_}
+    )
 
     stamp="setup ssh for oar user"
     [ -e /tmp/stamp.${stamp// /_} ] || (
