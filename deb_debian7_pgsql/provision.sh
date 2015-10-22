@@ -57,9 +57,10 @@ EOF
 deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
 EOF
   fi
-  cat <<EOF > /etc/apt/sources.list.d/wheezy-backports.list
-deb http://ftp.debian.org/debian/ wheezy-backports main
-EOF
+#Backports are already in the sources.list file
+#  cat <<EOF > /etc/apt/sources.list.d/wheezy-backports.list
+#deb http://ftp.debian.org/debian/ wheezy-backports main
+#EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "wheezy";
 EOF
@@ -73,16 +74,12 @@ EOF
   fi    
   cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
-Pin: origin "$OAR_FTP_HOST"
-Pin-Priority: 999
-
-Package: oar-* liboar-perl
 Pin: release n=wheezy-backports
 Pin-Priority: 999
 
 Package: *
 Pin: origin "$OAR_FTP_HOST"
-Pin-Priority: -1
+Pin-Priority: 999
 
 Package: *
 Pin: release n=wheezy-backports
@@ -192,7 +189,7 @@ EOF
           -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
           /etc/oar/drawgantt-config.inc.php
       a2enmod cgi
-      a2enconf oar-web-status
+      #a2enconf oar-web-status
       service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
@@ -303,13 +300,13 @@ EOF
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
-      a2enmod fastcgi
-      a2enmod suexec
-      sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
-      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
-      sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
-      a2enconf oar-restful-api
-      service apache2 restart
+      #a2enmod fastcgi
+      #a2enmod suexec
+      #sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
+      #sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
+      #sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
+      #a2enconf oar-restful-api
+      #service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
 

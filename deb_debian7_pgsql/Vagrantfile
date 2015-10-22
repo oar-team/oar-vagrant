@@ -28,7 +28,7 @@ DEBIAN_EXTRA_DISTRIB = ENV["DEBIAN_EXTRA_DISTRIB"]
 #end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "oar-team/debian8"
+  config.vm.box = "oar-team/debian7"
   config.vm.box_url = "http://oar-ftp.imag.fr/vagrant/debian7.box"
   config.ssh.insert_key = false
   config.vm.define "server", primary: true do |m|
