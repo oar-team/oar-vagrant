@@ -189,7 +189,7 @@ EOF
           -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
           /etc/oar/drawgantt-config.inc.php
       a2enmod cgi
-      #a2enconf oar-web-status
+      #a2enconf oar-web-status # Wheezy uses conf.d, oar-web-status config is linked there upon install.
       service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
@@ -300,13 +300,13 @@ EOF
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
-      #a2enmod fastcgi
-      #a2enmod suexec
-      #sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
-      #sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
-      #sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
-      #a2enconf oar-restful-api
-      #service apache2 restart
+      a2enmod fastcgi
+      a2enmod suexec
+      sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
+      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
+      sed -i -e 's@Deny from all@Allow from all@' /etc/oar/apache2/oar-restful-api.conf
+      #a2enconf oar-restfut-api # Wheezy uses conf.d, oar-restful-api config is linked there upon install.
+      service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
 
