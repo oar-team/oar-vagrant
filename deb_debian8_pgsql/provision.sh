@@ -299,7 +299,7 @@ EOF
     stamp="install OAR RESTful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd
+      apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd libapache2-mod-fastcgi apache2-suexec-custom
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
