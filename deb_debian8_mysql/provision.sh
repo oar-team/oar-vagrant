@@ -72,16 +72,12 @@ EOF
   fi    
   cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
-Pin: origin "$OAR_FTP_HOST"
-Pin-Priority: 999
-
-Package: oar-* liboar-perl
 Pin: release n=jessie-backports
-Pin-Priority: 999
+Pin-Priority: 998
 
 Package: *
 Pin: origin "$OAR_FTP_HOST"
-Pin-Priority: -1
+Pin-Priority: 999
 
 Package: *
 Pin: release n=jessie-backports

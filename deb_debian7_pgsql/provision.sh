@@ -75,7 +75,7 @@ EOF
   cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
 Pin: release n=wheezy-backports
-Pin-Priority: 999
+Pin-Priority: 998
 
 Package: *
 Pin: origin "$OAR_FTP_HOST"
