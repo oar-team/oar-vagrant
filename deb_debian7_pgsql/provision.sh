@@ -303,7 +303,7 @@ EOF
       a2enmod fastcgi
       a2enmod suexec
       sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
-      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-enabled/fastcgi.conf
+      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-available/fastcgi.conf
       sed -i -e 's@Deny from all@Allow from all@' /etc/oar/apache2/oar-restful-api.conf
       #a2enconf oar-restfut-api # Wheezy uses conf.d, oar-restful-api config is linked there upon install.
       service apache2 restart
