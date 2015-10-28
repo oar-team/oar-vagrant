@@ -57,9 +57,10 @@ EOF
 deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
 EOF
   fi
-  cat <<EOF > /etc/apt/sources.list.d/jessie-backports.list
-deb http://ftp.debian.org/debian/ jessie-backports main
-EOF
+#Backports are already in the sources.list file
+#  cat <<EOF > /etc/apt/sources.list.d/jessie-backports.list
+#deb http://ftp.debian.org/debian/ jessie-backports main
+#EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
 APT::Default-Release "jessie";
 EOF
