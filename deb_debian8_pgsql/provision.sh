@@ -165,35 +165,6 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
-    stamp="install oar-web-status"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
-      touch /tmp/stamp.${stamp// /_}
-    )
-
-    stamp="set oar-web-status configs"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i \
-          -e "s/^\(username =\).*/\1 oar_ro/" \
-          -e "s/^\(password =\).*/\1 oar_ro/" \
-          -e "s/^\(dbtype =\).*/\1 psql/" \
-          -e "s/^\(dbport =\).*/\1 5432/" \
-          -e "s/^\(hostname =\).*/\1 server/" \
-          /etc/oar/monika.conf
-      sed -i \
-          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
-          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
-          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
-          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
-          /etc/oar/drawgantt-config.inc.php
-      a2enmod cgi
-      a2enconf oar-web-status
-      service apache2 restart
-      touch /tmp/stamp.${stamp// /_}
-    )
-
   ;;
   frontend)
     stamp="create some users"
@@ -290,6 +261,35 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="install oar-web-status"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php5-pgsql
+      touch /tmp/stamp.${stamp// /_}
+    )
+
+    stamp="set oar-web-status configs"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      sed -i \
+          -e "s/^\(username =\).*/\1 oar_ro/" \
+          -e "s/^\(password =\).*/\1 oar_ro/" \
+          -e "s/^\(dbtype =\).*/\1 psql/" \
+          -e "s/^\(dbport =\).*/\1 5432/" \
+          -e "s/^\(hostname =\).*/\1 server/" \
+          /etc/oar/monika.conf
+      sed -i \
+          -e "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" \
+          -e "s/\$CONF\['db_server'\]=\"127.0.0.1\"/\$CONF\['db_server'\]=\"server\"/g" \
+          -e "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" \
+          -e "s/\"My OAR resources\"/\"Docker oarcluster resources\"/g" \
+          /etc/oar/drawgantt-config.inc.php
+      a2enmod cgi
+      a2enconf oar-web-status
+      service apache2 restart
       touch /tmp/stamp.${stamp// /_}
     )
 
