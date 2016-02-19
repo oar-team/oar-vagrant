@@ -45,6 +45,13 @@ EOF
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="yum update"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  yum update -y
+  touch /tmp/stamp.${stamp// /_}
+)
+
 stamp="stop firewalld"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
