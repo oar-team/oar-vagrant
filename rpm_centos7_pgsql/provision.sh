@@ -284,6 +284,7 @@ EOF
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
       yum install -y nfs-utils rpcbind
       echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home

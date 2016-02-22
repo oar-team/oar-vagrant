@@ -272,6 +272,7 @@ EOF
   nodes)
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
       echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
       mount /home
       touch /tmp/stamp.${stamp// /_}
