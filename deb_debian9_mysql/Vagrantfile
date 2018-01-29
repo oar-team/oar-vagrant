@@ -5,7 +5,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 # IP Network to use:
-NETWORK_PREFIX = ENV["OARVAGRANT_NETWORK_PREFIX"] || "192.168.36"
+NETWORK_PREFIX = ENV["OARVAGRANT_NETWORK_PREFIX"] || "192.168.38"
 
 # NODES_COUNT set the number of nodes of your cluster.
 # Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell

@@ -105,7 +105,7 @@ case $BOX in
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y mysql-server
-      sed -i -e "s/^\(bind-address[[:space:]]*=\).*/\1 ${NETWORK_PREFIX}.10/" /etc/mysql/my.cnf
+      sed -i -e "s/^\(bind-address[[:space:]]*=\).*/\1 ${NETWORK_PREFIX}.10/" /etc/mysql/mariadb.conf.d/50-server.cnf
       service mysql restart
       touch /tmp/stamp.${stamp// /_}
     )
@@ -261,7 +261,7 @@ EOF
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-mysql-perl php5-mysql
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-mysql-perl
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -290,14 +290,14 @@ EOF
     stamp="install OAR RESTful api"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd libapache2-mod-fastcgi apache2-suexec-custom
+      apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd libapache2-mod-fcgid apache2-suexec-custom
       a2enmod ident
       a2enmod rewrite
       a2enmod headers
-      a2enmod fastcgi
+      a2enmod fcgid
       a2enmod suexec
       sed -i -e '1s@^/var/www.*@/usr/lib/cgi-bin@' /etc/apache2/suexec/www-data
-      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-available/fastcgi.conf
+      sed -i -e 's@#\(FastCgiWrapper /usr/lib/apache2/suexec\)@\1@' /etc/apache2/mods-available/fcgid.conf
       sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
       a2enconf oar-restful-api
       service apache2 restart
