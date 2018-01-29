@@ -28,7 +28,7 @@ OAR_FTP_DISTRIB = ENV["OAR_FTP_DISTRIB"]
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oar-team/centos6"
-  config.vm.box_url = "http://oar-old.imag.fr/vagrant/centos6.box"
+  #config.vm.box_url = "http://oar-old.imag.fr/vagrant/centos6.box"
   config.ssh.insert_key = false
   config.vm.synced_folder ".", "/vagrant", create: true
   config.vm.define "server" do |m|
