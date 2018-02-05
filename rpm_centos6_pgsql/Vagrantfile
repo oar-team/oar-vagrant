@@ -55,7 +55,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provider "virtualbox" do |v|
     v.memory = VM_MEMORY
     v.cpus = VM_CPU
-    v.linked_clone = true if Vagrant::VERSION =~ /^1.8/
+    v.linked_clone = true if Gem::Version.new(Vagrant::VERSION) >= Gem::Version.new('1.8.0')
   end
 
   if Vagrant.has_plugin?("vagrant-proxyconf")
