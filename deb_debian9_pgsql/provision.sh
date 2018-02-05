@@ -267,7 +267,7 @@ EOF
     stamp="install oar-web-status"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      apt-get install -y $OAR_APT_OPTS oar-web-status
+      apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php-pgsql
       touch /tmp/stamp.${stamp// /_}
     )
 
