@@ -16,6 +16,13 @@ if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST
   exit 1
 fi
 
+stamp="fix box bugs"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  rm -rfv /etc/udev/rules.d/70-persistent-net.rules
+  touch /tmp/stamp.${stamp// /_}
+)
+
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
