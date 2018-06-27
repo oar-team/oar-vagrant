@@ -99,9 +99,11 @@ EOF
           -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(SERVER_HOSTNAME\)=.*/\1="server"/' \
-          -e 's/^\(LOG_LEVEL\)\=\"2\"/\1\=\"3\"/' \
-          -e 's/^#\(JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD\=\"cpuset\".*\)/\1/' \
+          -e 's/^\(LOG_LEVEL\)=.*/\1="3"/' \
+          -e 's/^#\(JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD=\"cpuset\".*\)/\1/' \
           -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' \
+          -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
+          -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
           /etc/oar/oar.conf
       touch /tmp/stamp.${stamp// /_}
     )
@@ -231,7 +233,9 @@ EOF
           -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(SERVER_HOSTNAME\)=.*/\1="server"/' \
-          -e 's/^\(LOG_LEVEL\)\=\"2\"/\1\=\"3\"/' \
+          -e 's/^\(LOG_LEVEL\)=.*/\1="3"/' \
+          -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
+          -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
           /etc/oar/oar.conf
       touch /tmp/stamp.${stamp// /_}
     )
