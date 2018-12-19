@@ -10,7 +10,7 @@ export OAR_FTP_DISTRIB=$5
 export DEBIAN_EXTRA_DISTRIB=$6
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
-export PGSQL_VERSION=9.6
+export PGSQL_VERSION=11
 
 if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
   echo "Error: syntax error, usage is $0 BOX NETWORK_PREFIX HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
@@ -64,12 +64,15 @@ EOF
 deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
 EOF
   fi
+  cat <<EOF > /etc/apt/sources.list.d/sid.list
+deb http://ftp.debian.org/debian/ sid main
+EOF
 #Backports are already in the sources.list file
-#  cat <<EOF > /etc/apt/sources.list.d/stretch-backports.list
-#deb http://ftp.debian.org/debian/ stretch-backports main
+#  cat <<EOF > /etc/apt/sources.list.d/buster-backports.list
+#deb http://ftp.debian.org/debian/ buster-backports main
 #EOF
   cat <<EOF > /etc/apt/apt.conf.d/00defaultrelease
-APT::Default-Release "stretch";
+APT::Default-Release "buster";
 EOF
   if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
     cat <<EOF > /etc/apt/preferences.d/oar-packages-preferences
@@ -81,7 +84,7 @@ EOF
   fi    
   cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
-Pin: release n=stretch-backports
+Pin: release n=buster-backports
 Pin-Priority: 998
 
 Package: *
@@ -89,11 +92,15 @@ Pin: origin "$OAR_FTP_HOST"
 Pin-Priority: 999
 
 Package: *
-Pin: release n=stretch-backports
+Pin: release n=buster-backports
 Pin-Priority: -1
 
 Package: *
-Pin: release n=stretch
+Pin: release n=sid
+Pin-Priority: -1
+
+Package: *
+Pin: release n=buster
 Pin-Priority: 500
 EOF
   touch /tmp/stamp.${stamp// /_}
@@ -233,7 +240,7 @@ EOF
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
       echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
       chmod +x /usr/sbin/policy-rc.d
-      apt-get install -y nis
+      apt-get install -y -t sid nis
       rm /usr/sbin/policy-rc.d
       nisdomainname $NISDOMAIN
       sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
