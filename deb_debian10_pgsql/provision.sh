@@ -17,6 +17,13 @@ if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST
   exit 1
 fi
 
+stamp="fix root ssh authorized_keys"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+  touch /tmp/stamp.${stamp// /_}
+)
+
 stamp="fix box bugs"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -64,9 +71,10 @@ EOF
 deb http://ftp.debian.org/debian/ $DEBIAN_EXTRA_DISTRIB main
 EOF
   fi
-  cat <<EOF > /etc/apt/sources.list.d/sid.list
-deb http://ftp.debian.org/debian/ sid main
-EOF
+#Sid is useless now
+#  cat <<EOF > /etc/apt/sources.list.d/sid.list
+#deb http://ftp.debian.org/debian/ sid main
+#EOF
 #Backports are already in the sources.list file
 #  cat <<EOF > /etc/apt/sources.list.d/buster-backports.list
 #deb http://ftp.debian.org/debian/ buster-backports main
@@ -237,15 +245,16 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
-      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
-      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
-      chmod +x /usr/sbin/policy-rc.d
-      apt-get install -y -t sid nis
-      rm /usr/sbin/policy-rc.d
+      #echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      #echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
+      #chmod +x /usr/sbin/policy-rc.d
+      #apt-get install -y -t sid nis
+      #rm /usr/sbin/policy-rc.d
+      apt-get install -y nis
       nisdomainname $NISDOMAIN
       sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
       /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
-      service nis restart
+      #service nis restart
       touch /tmp/stamp.${stamp// /_}
     )
 
