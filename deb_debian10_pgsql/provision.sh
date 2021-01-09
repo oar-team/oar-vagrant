@@ -3,24 +3,38 @@
 set -e
 
 export BOX=$1
-export NETWORK_PREFIX=$2
-export HOSTS_COUNT=$3
-export OAR_FTP_HOST=$4
-export OAR_FTP_DISTRIB=$5
-export DEBIAN_EXTRA_DISTRIB=$6
+export NETWORK_PREFIX=${2}
+export NETWORK_MASK=${3}
+export NETWORK_SERVER_IP=${4}
+export NETWORK_FRONTEND_IP=${5}
+export NETWORK_BRIDGE=${6}
+export HOSTS_COUNT=${7}
+export OAR_FTP_HOST=${8}
+export OAR_FTP_DISTRIB=${9}
+export DEBIAN_EXTRA_DISTRIB=${10}
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
 export PGSQL_VERSION=11
 
-if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
-  echo "Error: syntax error, usage is $0 BOX NETWORK_PREFIX HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
+if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$NETWORK_MASK" -o -z "$NETWORK_SERVER_IP" -o -z "$NETWORK_FRONTEND_IP" -o -z "$NETWORK_BRIDGE" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
+  echo "Error: usage is $0 BOX NETWORK_PREFIX NETWORK_MASK NETWORK_SERVER_IP NETWORK_FRONTEND_IP NETWORK_BRIDGE HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
   exit 1
 fi
 
-stamp="fix root ssh authorized_keys"
+stamp="fix root ssh"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+  if [ ! -f /root/.ssh/id_rsa -a ! -f /root/.ssh/id_rsa.pub -a ! -f /root/.ssh/authorized_keys -a ! -f /root/.ssh/config ]; then
+    ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+    cat <<EOF > /root/.ssh/config
+host *
+  StrictHostKeyChecking no
+EOF
+  elif [ ! -f /root/.ssh/id_rsa -o ! -f /root/.ssh/id_rsa.pub -o ! -f /root/.ssh/authorized_keys ]; then
+    echo "Error: one of the ssh key files is missing" 1>&2
+    exit 1
+  fi
   touch /tmp/stamp.${stamp// /_}
 )
 
@@ -34,10 +48,10 @@ stamp="fix box bugs"
 stamp="provision etc hosts"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  echo ${NETWORK_PREFIX}.10 server >> /etc/hosts
-  echo ${NETWORK_PREFIX}.11 frontend >> /etc/hosts
+  echo ${NETWORK_SERVER_IP} server >> /etc/hosts
+  echo ${NETWORK_FRONTEND_IP} frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
-    echo ${NETWORK_PREFIX}.$((100+i)) node-$i >> /etc/hosts
+    echo ${NETWORK_PREFIX}.$((10+i)) node-$i >> /etc/hosts
   done
   touch /tmp/stamp.${stamp// /_}
 )
@@ -122,8 +136,23 @@ stamp="update system"
   touch /tmp/stamp.${stamp// /_}
 )
 
+stamp="install common packages"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  apt-get install -y rsync
+  touch /tmp/stamp.${stamp// /_}
+)
+
 case $BOX in
   server)
+    stamp="configure bridge routing"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      sysctl net.ipv4.ip_forward=1
+      iptables -t nat -A POSTROUTING -s $NETWORK_PREFIX.0/$NETWORK_MASK -j MASQUERADE
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="install and configure postgresql server"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
@@ -235,7 +264,9 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
-      echo "/home/ ${NETWORK_PREFIX}.0/24(rw,no_subtree_check)" > /etc/exports
+      cat <<EOF > /etc/exports
+/home/ ${NETWORK_PREFIX}.0/${NETWORK_MASK} (rw,no_subtree_check)
+EOF
       service nfs-kernel-server restart
       exportfs -rv
       touch /tmp/stamp.${stamp// /_}
@@ -339,11 +370,22 @@ EOF
 
   ;;
   nodes)
+    stamp="configure bridge routing"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      ip route del default
+      ip route add default via $NETWORK_SERVER_IP
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="mount NFS home"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      echo "${NETWORK_PREFIX}.11:/home /home nfs defaults 0 0" >> /etc/fstab
+      apt-get install -y nfs-common
+      echo "${NETWORK_FRONTEND_IP}:/home /home nfs vers=3 0 0" >> /etc/fstab
       mount /home
+      # Note: from now on, `vagrant ssh node-1` won't work anymore because
+      # /home/vagrant/.ssh/authorized_keys is not the one of the node anymore
       touch /tmp/stamp.${stamp// /_}
     )
 
