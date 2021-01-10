@@ -224,10 +224,12 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
-        useradd -N -m -s /bin/bash user$i
+        # Use /homenfs instead of /home, so that /home/vagrant is left apart on nodes
+        mkdir -p /homenfs
+        useradd --home /homenfs/user$i -N -m -s /bin/bash user$i
         echo "user$i:vagrant" | chpasswd 
-        cp -a /home/vagrant/.ssh /home/user$i/
-        cat >> /home/user$i/.bashrc <<'EOF'
+        cp -a /root/.ssh /homenfs/user$i/
+        cat >> /homenfs/user$i/.bashrc <<'EOF'
 function _oarsh_complete_() {
   if [ -n "$OAR_NODEFILE" -a "$COMP_CWORD" -eq 1 ]; then
     local word=${comp_words[comp_cword]}
@@ -255,7 +257,7 @@ if [ "$PS1" ]; then
    fi
 fi
 EOF
-        chown user$i:users /home/user$i -R
+        chown user$i:users /homenfs/user$i -R
       done
       touch /tmp/stamp.${stamp// /_}
     )
@@ -265,7 +267,7 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
       cat <<EOF > /etc/exports
-/home/ ${NETWORK_PREFIX}.0/${NETWORK_MASK} (rw,no_subtree_check)
+/homenfs/ ${NETWORK_PREFIX}.0/${NETWORK_MASK} (rw,no_subtree_check)
 EOF
       service nfs-kernel-server restart
       exportfs -rv
@@ -382,10 +384,10 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-common
-      echo "${NETWORK_FRONTEND_IP}:/home /home nfs vers=3 0 0" >> /etc/fstab
-      mount /home
-      # Note: from now on, `vagrant ssh node-1` won't work anymore because
-      # /home/vagrant/.ssh/authorized_keys is not the one of the node anymore
+      # Use /homenfs instead of /home, so that /home/vagrant/.ssh/authorized_keys is left untouched
+      mkdir -p /homenfs
+      echo "${NETWORK_FRONTEND_IP}:/homenfs /homenfs nfs vers=3 0 0" >> /etc/fstab
+      mount /homenfs
       touch /tmp/stamp.${stamp// /_}
     )
 
