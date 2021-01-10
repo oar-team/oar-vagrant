@@ -103,7 +103,7 @@ Pin: release n=$DEBIAN_EXTRA_DISTRIB
 Pin-Priority: 999
 
 EOF
-  fi    
+  fi
   cat <<EOF >> /etc/apt/preferences.d/oar-packages-preferences
 Package: oar-* liboar-perl
 Pin: release n=buster-backports
@@ -227,7 +227,7 @@ EOF
         # Use /homenfs instead of /home, so that /home/vagrant is left apart on nodes
         mkdir -p /homenfs
         useradd --home /homenfs/user$i -N -m -s /bin/bash user$i
-        echo "user$i:vagrant" | chpasswd 
+        echo "user$i:vagrant" | chpasswd
         cp -a /root/.ssh /homenfs/user$i/
         cat >> /homenfs/user$i/.bashrc <<'EOF'
 function _oarsh_complete_() {
@@ -278,16 +278,17 @@ EOF
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
-      #echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
-      #echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
-      #chmod +x /usr/sbin/policy-rc.d
-      #apt-get install -y -t sid nis
-      #rm /usr/sbin/policy-rc.d
+      echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      # Workaround to install but not run the nis service (avoid timeout)
+      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
+      chmod +x /usr/sbin/policy-rc.d
       apt-get install -y nis
+      rm /usr/sbin/policy-rc.d
       nisdomainname $NISDOMAIN
-      sed -i -e "s/^\(NISSERVER=\).*/\1true/" /etc/default/nis
+      sed -i -e "s/^\(NISSERVER=\).*/\1master/" /etc/default/nis
       /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
-      #service nis restart
+      echo "ypserver frontend" >> /etc/yp.conf
+      systemctl restart nis
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -396,8 +397,17 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
+      # Workaround to install but not run the nis service (avoid timeout)
+      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
+      chmod +x /usr/sbin/policy-rc.d
       apt-get install -y nis
+      rm /usr/sbin/policy-rc.d
+      nisdomainname $NISDOMAIN
+      echo "ypserver frontend" >> /etc/yp.conf
+      systemctl restart nis
       echo "+::::::" >> /etc/passwd
+      sed -i -e 's/^\(\(passwd\|shadow\|group\):.*\)/\1 nis/' /etc/nsswitch.conf
+
       touch /tmp/stamp.${stamp// /_}
     )
 
