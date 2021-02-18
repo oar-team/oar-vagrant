@@ -132,6 +132,7 @@ stamp="update system"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   apt-get update
+  echo "set grub-pc/install_devices /dev/sda" | debconf-communicate > /dev/null
   apt-get upgrade -y
   touch /tmp/stamp.${stamp// /_}
 )
