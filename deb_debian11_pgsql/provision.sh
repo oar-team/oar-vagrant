@@ -75,6 +75,8 @@ stamp="Drop Puppet repository"
 stamp="Setup APT sources and preferences packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
+  apt-get update
+  apt-get install -y gnupg
   if [ -n "$OAR_FTP_DISTRIB" ]; then
     cat <<EOF > /etc/apt/sources.list.d/oar-ftp.list
 deb http://$OAR_FTP_HOST/oar/2.5/debian/ $OAR_FTP_DISTRIB main
