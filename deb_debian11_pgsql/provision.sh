@@ -281,16 +281,16 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
-      # Workaround to install but not run the nis service (avoid timeout)
-      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
-      chmod +x /usr/sbin/policy-rc.d
+      echo $NISDOMAIN > /etc/defaultdomain
       apt-get install -y nis
-      rm /usr/sbin/policy-rc.d
-      nisdomainname $NISDOMAIN
-      sed -i -e "s/^\(NISSERVER=\).*/\1master/" /etc/default/nis
+      systemctl enable ypserv.service
+      systemctl enable yppasswdd.service
+      systemctl enable ypxfrd.service
+      systemctl start ypserv.service
+      systemctl start yppasswdd.service
+      systemctl start ypxfrd.service
       /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
-      echo "ypserver frontend" >> /etc/yp.conf
-      systemctl restart nis
+      systemctl start ypxfrd.service
       touch /tmp/stamp.${stamp// /_}
     )
 
@@ -399,14 +399,11 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
-      # Workaround to install but not run the nis service (avoid timeout)
-      echo '[ "$1" = "nis" ] && exit 101 || exit 0' > /usr/sbin/policy-rc.d;
-      chmod +x /usr/sbin/policy-rc.d
       apt-get install -y nis
-      rm /usr/sbin/policy-rc.d
-      nisdomainname $NISDOMAIN
+      echo $NISDOMAIN > /etc/defaultdomain
       echo "ypserver frontend" >> /etc/yp.conf
-      systemctl restart nis
+      systemctl enable ypbind.service
+      systemctl start ypbind.service
       echo "+::::::" >> /etc/passwd
       sed -i -e 's/^\(\(passwd\|shadow\|group\):.*\)/\1 nis/' /etc/nsswitch.conf
 
