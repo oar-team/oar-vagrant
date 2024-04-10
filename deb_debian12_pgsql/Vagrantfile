@@ -10,7 +10,7 @@ NETWORK_MASK = ENV["OARVAGRANT_NETWORK_MASK"] || "255.255.255.0"
 NETWORK_SERVER_IP = ENV["OARVAGRANT_NETWORK_SERVER_IP"] || "#{NETWORK_PREFIX}.3"
 NETWORK_FRONTEND_IP = ENV["OARVAGRANT_NETWORK_SERVER_IP"] || "#{NETWORK_PREFIX}.4"
 NETWORK_BRIDGE = ENV["OARVAGRANT_NETWORK_BRIDGE"]
-BOX = ENV["OARVAGRANT_BOX"] || "debian/testing64"
+BOX = ENV["OARVAGRANT_BOX"] || "debian/bookworm64"
 
 # NODES_COUNT set the number of nodes of your cluster.
 # Change the value there or set the OARVAGRANT_NODES_COUNT environment variable in the calling shell
