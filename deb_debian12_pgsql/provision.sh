@@ -445,6 +445,13 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
 
+    stamp="fix ssh for oar user"
+    [ -e /tmp/stamp.${stamp// /_} ] || (
+      echo -ne "##\n## $stamp\n##\n" ; set -x
+      sed -i -e 's/^oar:!:/oar:*:/' /etc/shadow
+      touch /tmp/stamp.${stamp// /_}
+    )
+
     stamp="forbid user ssh to node"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
