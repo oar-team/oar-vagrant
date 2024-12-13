@@ -15,14 +15,17 @@ export DEBIAN_EXTRA_DISTRIB=${10}
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
 export PGSQL_VERSION=15
+export STAMP_PATH_PREFIX=/var/lib/vagrant-provision/stamp
 
 if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$NETWORK_MASK" -o -z "$NETWORK_SERVER_IP" -o -z "$NETWORK_FRONTEND_IP" -o -z "$NETWORK_BRIDGE" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
   echo "Error: usage is $0 BOX NETWORK_PREFIX NETWORK_MASK NETWORK_SERVER_IP NETWORK_FRONTEND_IP NETWORK_BRIDGE HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
   exit 1
 fi
 
+mkdir -p ${STAMP_PATH_PREFIX%/*}
+
 stamp="fix root ssh"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   if [ ! -f /root/.ssh/id_rsa -a ! -f /root/.ssh/id_rsa.pub -a ! -f /root/.ssh/authorized_keys -a ! -f /root/.ssh/config ]; then
     ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
@@ -35,45 +38,45 @@ EOF
     echo "Error: one of the ssh key files is missing" 1>&2
     exit 1
   fi
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="fix box bugs"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   rm -rfv /etc/udev/rules.d/70-persistent-net.rules
   #echo 'set grub-pc/install_devices /dev/sda' | debconf-communicate
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="provision etc hosts"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   echo ${NETWORK_SERVER_IP} server >> /etc/hosts
   echo ${NETWORK_FRONTEND_IP} frontend >> /etc/hosts
   for ((i=1;i<=$HOSTS_COUNT;i++)); do
     echo ${NETWORK_PREFIX}.$((10+i)) node-$i >> /etc/hosts
   done
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="Drop apt sources repository"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   grep  -v -e "^deb-src" /etc/apt/sources.list > /etc/apt/sources.list.new
   mv /etc/apt/sources.list.new /etc/apt/sources.list
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="Drop Puppet repository"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   rm -f /etc/apt/sources.list.d/puppetlabs.list
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="Setup APT sources and preferences packages"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   apt-get update
   apt-get install -y gnupg
@@ -128,37 +131,37 @@ Package: *
 Pin: release n=bookworm
 Pin-Priority: 500
 EOF
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="update system"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   apt-get update
   echo "set grub-pc/install_devices /dev/sda" | debconf-communicate > /dev/null
   apt-get upgrade -y
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 stamp="install common packages"
-[ -e /tmp/stamp.${stamp// /_} ] || (
+[ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   apt-get install -y rsync
-  touch /tmp/stamp.${stamp// /_}
+  touch $STAMP_PATH_PREFIX.${stamp// /_}
 )
 
 case $BOX in
   server)
     stamp="configure bridge routing"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sysctl net.ipv4.ip_forward=1
       iptables -t nat -A POSTROUTING -s $NETWORK_PREFIX.0/$NETWORK_MASK -j MASQUERADE
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install and configure postgresql server"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y postgresql-$PGSQL_VERSION
       PGSQL_CONFDIR=/etc/postgresql/$PGSQL_VERSION/main
@@ -168,18 +171,18 @@ case $BOX in
 host oar all ${NETWORK_PREFIX}.0/24 md5
 EOF
       service postgresql restart
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install oar-server package"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y $OAR_APT_OPTS oar-server oar-server-pgsql
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="set oar config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e 's/^\(DB_TYPE\)=.*/\1="Pg"/' \
@@ -196,36 +199,36 @@ EOF
           -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
           -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
           /etc/oar/oar.conf
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="create oar db"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       oar-database --create --db-is-local --db-admin-user root
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="create oar resources"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       oar_resources_add -H $HOSTS_COUNT -C 1 -c 1 -t 1 | tee /tmp/oar_create_resources
       sync
       . /tmp/oar_create_resources
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="start oar-server"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       service oar-server start
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
   ;;
   frontend)
     stamp="create some users"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       for i in {1..3}; do
         # Use /homenfs instead of /home, so that /home/vagrant is left apart on nodes
@@ -263,11 +266,11 @@ fi
 EOF
         chown user$i:users /homenfs/user$i -R
       done
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="configure NFS server"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
       cat <<EOF > /etc/exports
@@ -275,11 +278,11 @@ EOF
 EOF
       service nfs-kernel-server restart
       exportfs -rv
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install and configure NIS server and client"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
@@ -293,18 +296,18 @@ EOF
       systemctl start ypxfrd.service
       /usr/lib/yp/ypinit -m < /dev/null 2> /dev/null
       systemctl start ypxfrd.service
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install oar-user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y $OAR_APT_OPTS oar-user oar-user-pgsql
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="set oar config"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e 's/^\(DB_TYPE\)=.*/\1="Pg"/' \
@@ -319,25 +322,25 @@ EOF
           -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
           -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
           /etc/oar/oar.conf
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="setup ssh for oar user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install oar-web-status"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y $OAR_APT_OPTS oar-web-status libdbd-pg-perl php-pgsql
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="set oar-web-status configs"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i \
           -e "s/^\(username =\).*/\1 oar_ro/" \
@@ -355,11 +358,11 @@ EOF
       a2enmod cgi
       a2enconf oar-web-status
       service apache2 restart
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install OAR RESTful api"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y $OAR_APT_OPTS oar-restful-api oidentd libapache2-mod-fcgid apache2-suexec-custom
       a2enmod ident
@@ -372,32 +375,32 @@ EOF
       sed -i -e 's@Require local@Require all granted@' /etc/oar/apache2/oar-restful-api.conf
       a2enconf oar-restful-api
       service apache2 restart
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
   ;;
   nodes)
     stamp="configure bridge routing"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       ip route del default
       ip route add default via $NETWORK_SERVER_IP
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="mount NFS home"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-common
       # Use /homenfs instead of /home, so that /home/vagrant/.ssh/authorized_keys is left untouched
       mkdir -p /homenfs
       echo "${NETWORK_FRONTEND_IP}:/homenfs /homenfs nfs vers=3 0 0" >> /etc/fstab
       mount /homenfs
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install and configure NIS client"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       NISDOMAIN="MyNISDomain"
       echo "nis nis/domain string $NISDOMAIN" | debconf-set-selections
@@ -408,18 +411,18 @@ EOF
       systemctl start ypbind.service
       echo "+::::::" >> /etc/passwd
       sed -i -e 's/^\(\(passwd\|shadow\|group\):.*\)/\1 nis/' /etc/nsswitch.conf
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="install oar-node"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y $OAR_APT_OPTS oar-node
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="start oar-node"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       cat >> /etc/default/oar-node <<'EOF'
 OAR_NODE_NAME=$(hostname -f)
@@ -435,43 +438,43 @@ stop_oar_node() {
 }
 EOF
       service oar-node restart
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="setup ssh for oar user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       rsync -avz server:/var/lib/oar/.ssh /var/lib/oar/
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="fix ssh for oar user"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i -e 's/^oar:!:/oar:*:/' /etc/shadow
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="forbid user ssh to node"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       cat <<EOF >> /etc/security/access.conf
 + : ALL : LOCAL
 - : ALL EXCEPT root oar
 EOF
       sed -i -e "s/^#[[:space:]]\+\(account[[:space:]]\+required[[:space:]]\+pam_access.so.*\)$/\1/" /etc/pam.d/login
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
     stamp="enable cgroup v1 and reboot"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
+    [ -e $STAMP_PATH_PREFIX.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
       sed -i -e 's/^\(GRUB_CMDLINE_LINUX\)="\?\([^"]*\)"\?$/\1="\2 systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=true"/' /etc/default/grub
       update-grub
       apt-get install -y dtach
       echo -ne "!!! REBOOTING NODE to enable cgroup v1: node should be ready soon !!!"
       dtach -n -- bash -c "sleep 3 ; systemctl reboot"
-      touch /tmp/stamp.${stamp// /_}
+      touch $STAMP_PATH_PREFIX.${stamp// /_}
     )
 
   ;;
