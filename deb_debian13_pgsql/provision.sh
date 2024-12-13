@@ -195,6 +195,7 @@ EOF
           -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' \
           -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
           -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
+          -e 's/^#\(DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM\)=.*/\1="systemd-run"/' \
           /etc/oar/oar.conf
       touch /tmp/stamp.${stamp// /_}
     )
