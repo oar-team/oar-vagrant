@@ -18,7 +18,7 @@ BOX = ENV["OARVAGRANT_BOX"] || "debian/testing64"
 # running more than a few nodes.
 NODES_COUNT = (ENV["OARVAGRANT_NODES_COUNT"] || 1).to_i
 
-VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 512).to_i
+VM_MEMORY = (ENV["OARVAGRANT_VM_MEMORY"] || 1024).to_i
 VM_CPU = (ENV["OARVAGRANT_VM_CPU"] || 1).to_i
 OAR_FTP_HOST = ENV["OAR_FTP_HOST"] || "oar-ftp.imag.fr"
 OAR_FTP_DISTRIB = ENV["OAR_FTP_DISTRIB"]
