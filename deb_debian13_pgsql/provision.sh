@@ -442,18 +442,6 @@ EOF
       sed -i -e "s/^#[[:space:]]\+\(account[[:space:]]\+required[[:space:]]\+pam_access.so.*\)$/\1/" /etc/pam.d/login
       touch /tmp/stamp.${stamp// /_}
     )
-
-    stamp="enable cgroup v1 and reboot"
-    [ -e /tmp/stamp.${stamp// /_} ] || (
-      echo -ne "##\n## $stamp\n##\n" ; set -x
-      sed -i -e 's/^\(GRUB_CMDLINE_LINUX\)="\?\([^"]*\)"\?$/\1="\2 systemd.unified_cgroup_hierarchy=false systemd.legacy_systemd_cgroup_controller=true"/' /etc/default/grub
-      update-grub
-      apt-get install -y dtach
-      echo -ne "!!! REBOOTING NODE to enable cgroup v1: node should be ready soon !!!"
-      dtach -n -- bash -c "sleep 3 ; systemctl reboot"
-      touch /tmp/stamp.${stamp// /_}
-    )
-
   ;;
   *)
     echo "Error: unknown BOX" 2>&1
