@@ -319,7 +319,7 @@ EOF
           -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' \
           -e 's/^\(SERVER_HOSTNAME\)=.*/\1="server"/' \
-          -e 's/^\(LOG_LEVEL\)=.*/\1="3"/' \
+          -e 's/^\(LOG_LEVEL\)=.*/\1="5"/' \
           -e 's/^#\(WALLTIME_CHANGE_ENABLED\)=.*/\1="yes"/' \
           -e 's/^#\(WALLTIME_MAX_INCREASE\)=.*/\1=-1/' \
           /etc/oar/oar.conf
