@@ -443,8 +443,18 @@ EOF
       touch /tmp/stamp.${stamp// /_}
     )
   ;;
+
   *)
     echo "Error: unknown BOX" 2>&1
     exit 1
   ;;
 esac
+
+stamp="Apply patched files"
+[ -e /tmp/stamp.${stamp// /_} ] || (
+  echo -ne "##\n## $stamp\n##\n" ; set -x
+  if [ -d /vagrant/patch ]; then
+    find /vagrant/patch/ -type f -exec bash -c 'f="$1"; if [ -e ${f#/vagrant/patch} ]; then ln -sfv $f ${f#/vagrant/patch}; fi' shell {} \;
+  fi
+  touch /tmp/stamp.${stamp// /_}
+)
