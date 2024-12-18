@@ -165,7 +165,7 @@ case $BOX in
       sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" $PGSQL_CONFDIR/postgresql.conf
       cat <<EOF >> $PGSQL_CONFDIR/pg_hba.conf
 #Access to OAR database
-host oar all ${NETWORK_PREFIX}.0/24 md5
+host oar all ${NETWORK_PREFIX}.0/${NETWORK_MASK} md5
 EOF
       service postgresql restart
       touch /tmp/stamp.${stamp// /_}
