@@ -210,12 +210,14 @@ EOF
     stamp="create oar resources"
     [ -e /tmp/stamp.${stamp// /_} ] || (
       echo -ne "##\n## $stamp\n##\n" ; set -x
-      CPU_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Socket(s):")) | .[].data')
-      CORE_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Core(s) per socket:")) | .[].data')
-      THREAD_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Thread(s) per core:")) | .[].data')
-      oar_resources_add -H $HOSTS_COUNT -C $CPU_COUNT -c $CORE_COUNT -t $THREAD_COUNT | tee /tmp/oar_create_resources
-      sync
-      . /tmp/oar_create_resources
+      if [ $HOSTS_COUNT -gt 0 ]; then
+        CPU_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Socket(s):")) | .[].data')
+        CORE_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Core(s) per socket:")) | .[].data')
+        THREAD_COUNT=$(lscpu -J | jq -r '.lscpu | map(select(.field == "Thread(s) per core:")) | .[].data')
+        oar_resources_add -H $HOSTS_COUNT -C $CPU_COUNT -c $CORE_COUNT -t $THREAD_COUNT | tee /tmp/oar_create_resources
+        sync
+        . /tmp/oar_create_resources
+      fi
       touch /tmp/stamp.${stamp// /_}
     )
 
