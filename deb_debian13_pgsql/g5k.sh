@@ -4,7 +4,7 @@ set -e
 SERVER=$1
 FRONTEND=$2
 
-IP=($(ip -br a | sed -ne 's/^eth.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)\.[[:digit:]]\+\/\([[:digit:]]\+\)\s.*$/\1 \2/p'))
+IP=($(ip r | sed -ne 's/^\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)\.[[:digit:]]\+\/\([[:digit:]]\+\)\s.*$/\1 \2/p'))
 PREFIX=${IP[0]}
 MASK=${IP[1]}
 
