@@ -38,6 +38,7 @@ unless NETWORK_BRIDGE.nil?
 rsync -rv ssh provision.sh <node>
 ssh node
 ./provision.sh nodes #{NETWORK_PREFIX} #{NETWORK_MASK} #{NETWORK_SERVER_IP} #{NETWORK_FRONTEND_IP} #{NETWORK_BRIDGE} #{NODES_COUNT} #{OAR_FTP_HOST} #{OAR_FTP_DISTRIB}
+
 EOS
 end
 
