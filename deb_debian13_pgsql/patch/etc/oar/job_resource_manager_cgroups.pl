@@ -325,40 +325,48 @@ if ($ARGV[0] eq "init") {
 
         # Manage GPU devices
         if ($Enable_devices_cg eq "YES") {
+	    if (grep { ($_->{type} eq "default") and
+		    ($_->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+		    exists($_->{'gpudevice'}) and
+                    ($_->{'gpudevice'} ne '') } @{ $Cpuset->{'resources'} }) {
+		print_log(5, "GPU found on node $ENV{TAKTUK_HOSTNAME}");
+            	my @deny_dev_array;
+            	# Nvidia GPUs
+            	opendir(my $dh, "/dev") or exit_myself(5, "Failed opening /dev");
+            	push(@deny_dev_array, map { "/dev/$_" } grep { /^nvidia\d+$/ } readdir($dh));
+            	close($dh);
 
-            my @deny_dev_array;
-            # Nvidia GPUs
-            opendir(my $dh, "/dev") or exit_myself(5, "Failed opening /dev");
-            push(@deny_dev_array, map { "/dev/$_" } grep { /^nvidia\d+$/ } readdir($dh));
-            close($dh);
+            	# Nvidia vGPUs (MIG)
+            	# https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#dev-based-nvidia-capabilities
+            	# nvidia-cap1 and nvidia-cap2 should always be denied (config and monitor)
+            	if (opendir(my $dh, "/dev/nvidia-caps")) {
+            	    push(@deny_dev_array, map { "/dev/nvidia-caps/$_" } readdir($dh));
+            	    close($dh);
+            	}
 
-            # Nvidia vGPUs (MIG)
-            # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#dev-based-nvidia-capabilities
-            # nvidia-cap1 and nvidia-cap2 should always be denied (config and monitor)
-            if (opendir(my $dh, "/dev/nvidia-caps")) {
-                push(@deny_dev_array, map { "/dev/nvidia-caps/$_" } readdir($dh));
-                close($dh);
-            }
+            	# AMD GPUs
+            	if (opendir(my $dh, "/dev/dri")) {
+            	    push(@deny_dev_array, map { "/dev/dri/$_" } grep { /^(?:card|renderD)\d+$/ } readdir($dh));
+            	    close($dh);
+            	}
 
-            # AMD GPUs
-            if (opendir(my $dh, "/dev/dri")) {
-                push(@deny_dev_array, map { "/dev/dri/$_" } grep { /^(?:card|renderD)\d+$/ } readdir($dh));
-                close($dh);
-            }
+            	my %deny_dev_hash = map { $_ => 1 } @deny_dev_array;
 
-            my %deny_dev_hash = map { $_ => 1 } @deny_dev_array;
-
-            foreach my $r (@{ $Cpuset->{'resources'} }) {
-                if (($r->{type} eq "default") and
-                    ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                    ($r->{'cgdev'} ne '')) {
-                     foreach my $dev (split(/[,+\s]+/, $r->{'cgdev'})) {
-                         delete(%deny_dev_hash{$dev});
-                     }
-                }
-            }
-            system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
-                and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
+            	foreach my $r (@{ $Cpuset->{'resources'} }) {
+            	    if (($r->{type} eq "default") and
+            	        ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+	    	        exists($r->{'gpudevice'}) and
+            	        ($r->{'gpudevice'} ne '')) {
+            	        foreach my $dev (split(/[,+\s]+/, $r->{'cgdev'})) {
+            	            delete(%deny_dev_hash{$dev});
+            	        }
+            	    }
+            	}
+            	system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
+            	    and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
+            } else {
+		print_log(5, "No GPU on node $ENV{TAKTUK_HOSTNAME}");
+	    }
         }    # if ($Enable_devices_cg eq "YES")
 
         # Assign the corresponding share of memory if memory cgroup enabled.
