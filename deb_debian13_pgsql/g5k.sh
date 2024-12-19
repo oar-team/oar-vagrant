@@ -22,5 +22,6 @@ ssh root@$FRONTEND /vagrant/provision.sh frontend $PREFIX $MASK $SERVER $FRONTEN
 
 ssh root@$NODE "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
 scp ~/.ssh/id_rsa* root@$NODE:.ssh/
+ssh root@$SERVER 'apt-get update && apt-get -y install hwloc-nox'
 rsync -avz . root@$NODE:/vagrant
 ssh root@$NODE /vagrant/provision.sh nodes $PREFIX $MASK $SERVER $FRONTEND no 0 oar-ftp.imag.fr
