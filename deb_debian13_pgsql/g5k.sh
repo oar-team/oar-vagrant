@@ -19,3 +19,8 @@ ssh root@$FRONTEND "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
 scp ~/.ssh/id_rsa* root@$FRONTEND:.ssh/
 rsync -avz . root@$FRONTEND:/vagrant
 ssh root@$FRONTEND /vagrant/provision.sh frontend $PREFIX $MASK $SERVER $FRONTEND no 0 oar-ftp.imag.fr
+
+ssh root@$NODE "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
+scp ~/.ssh/id_rsa* root@$NODE:.ssh/
+rsync -avz . root@$NODE:/vagrant
+ssh root@$NODE /vagrant/provision.sh nodes $PREFIX $MASK $SERVER $FRONTEND no 0 oar-ftp.imag.fr
