@@ -71,7 +71,7 @@ sub system_with_log($);
 my $Enable_mem_cg = "NO";
 
 # Put YES if you want to use the device cgroup (supports nvidia devices only for now)
-my $Enable_devices_cg = "NO";
+my $Enable_devices_cg = "YES";
 
 # Put YES if you want to use the blkio cgroup
 my $Enable_blkio_cg = "NO";
