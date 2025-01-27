@@ -14,7 +14,7 @@ export OAR_FTP_DISTRIB=${9}
 export DEBIAN_EXTRA_DISTRIB=${10}
 export DEBIAN_FRONTEND=noninteractive
 export OAR_APT_OPTS=""
-export PGSQL_VERSION=16
+export PGSQL_VERSION=17
 
 if [ -z "$BOX" -o -z "$NETWORK_PREFIX" -o -z "$NETWORK_MASK" -o -z "$NETWORK_SERVER_IP" -o -z "$NETWORK_FRONTEND_IP" -o -z "$NETWORK_BRIDGE" -o -z "$HOSTS_COUNT" -o -z "$OAR_FTP_HOST" ]; then
   echo "Error: usage is $0 BOX NETWORK_PREFIX NETWORK_MASK NETWORK_SERVER_IP NETWORK_FRONTEND_IP NETWORK_BRIDGE HOSTS_COUNT OAR_FTP_HOST [OAR_FTP_DISTRIB]" 1>&2
@@ -81,7 +81,7 @@ stamp="Setup APT sources and preferences packages"
     cat <<EOF > /etc/apt/sources.list.d/oar-ftp.list
 deb http://$OAR_FTP_HOST/oar/2.5/debian/ $OAR_FTP_DISTRIB main
 EOF
-    wget -q -O- http://$OAR_FTP_HOST/oar/oarmaster.asc | sudo apt-key add -
+    wget -q -O /etc/apt/trusted.gpg.d/oarmaster.asc http://$OAR_FTP_HOST/oar/oarmaster.asc
   fi
   if [ -n "$DEBIAN_EXTRA_DISTRIB" ]; then
     cat <<EOF > /etc/apt/sources.list.d/$DEBIAN_EXTRA_DISTRIB.list
