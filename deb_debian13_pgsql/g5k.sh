@@ -54,7 +54,9 @@ FRONTEND=$(host "${NODES[1]}" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.
 server() {
     ssh root@"$SERVER" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
     scp ~/.ssh/id_rsa* root@"$SERVER":.ssh/
+    ssh root@"$SERVER" 'sed -e "/testing-/d;s/testing/sid/" /etc/apt/sources.list > /etc/apt/sources.list.d/sid.list'
     ssh root@"$SERVER" 'apt-get update && apt-get -y install apt iptables jq rsync bash-completion vim-nox'
+    ssh root@"$SERVER" 'apt-get -y install -t sid hwloc-nox'
     rsync -avz . root@"$SERVER":/vagrant
     ssh root@"$SERVER" /vagrant/provision.sh server "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
     printf "%s\n" "${NODES[@]:2}" | ssh root@"$SERVER" 'cat > /tmp/nodes'
@@ -63,32 +65,35 @@ server() {
 frontend() {
     ssh root@"$FRONTEND" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
     scp ~/.ssh/id_rsa* root@"$FRONTEND":.ssh/
+    ssh root@"$FRONTEND" 'sed -e "/testing-/d;s/testing/sid/" /etc/apt/sources.list > /etc/apt/sources.list.d/sid.list'
     ssh root@"$FRONTEND" 'apt-get update && apt-get -y install apt bash-completion vim-nox'
+    ssh root@"$FRONTEND" 'apt-get -y install -t sid hwloc-nox'
     rsync -avz . root@"$FRONTEND":/vagrant
     ssh root@"$FRONTEND" /vagrant/provision.sh frontend "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
 }
 
 node() {
-	local n
+    local n
     n=$(host "$1" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
-	ssh root@"$n" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
-	scp ~/.ssh/id_rsa* root@"$n":.ssh/
+    ssh root@"$n" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
+    scp ~/.ssh/id_rsa* root@"$n":.ssh/
     ssh root@"$n" 'sed -e "/testing-/d;s/testing/sid/" /etc/apt/sources.list > /etc/apt/sources.list.d/sid.list'
-	ssh root@"$n" 'apt-get update && apt-get -y install apt bash-completion vim-nox && apt-get -y install -t sid hwloc-nox'
-	rsync -avz . root@"$n":/vagrant
-	ssh root@"$n" /vagrant/provision.sh nodes "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
+    ssh root@"$n" 'apt-get update && apt-get -y install apt bash-completion vim-nox'
+    ssh root@"$n" 'apt-get -y install -t sid hwloc-nox'
+    rsync -avz . root@"$n":/vagrant
+    ssh root@"$n" /vagrant/provision.sh nodes "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
 }
 
 server | sed "s/^/[SERVER:${NODES[0]}] /"
 frontend | sed "s/^/[FRONTEND:${NODES[1]}] /"
 
 if [ ${#NODES[*]} -le 3 ]; then
-	node "${NODES[2]}" | sed "s/^/[NODE:${NODES[2]}] /"
+    node "${NODES[2]}" | sed "s/^/[NODE:${NODES[2]}] /"
 else
-	for n in "${NODES[@]:2}"; do
-	   node "$n" | sed "s/^/[NODE:$n] /" &
-	done
-	wait
+    for n in "${NODES[@]:2}"; do
+       node "$n" | sed "s/^/[NODE:$n] /" &
+    done
+    wait
 fi
 
 cat <<EOF
