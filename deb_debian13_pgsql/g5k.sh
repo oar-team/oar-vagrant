@@ -32,12 +32,21 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     exit 0
 fi
 
+nodefile() {
+	  if [ -r "$1" ]; then
+        mapfile -t NODES < <(uniq "$1")
+    else
+        usage 1>&2
+        exit 1
+    fi
+}
+
 if [ $# -ge 3 ]; then
     NODES=( "$@" )
-elif [ -n "$1" ] && [ -r "$1" ]; then
-    mapfile -t NODES < <(uniq "$1")
+elif [ -n "$1" ]; then
+    nodefile "$1"
 elif [ -n "$OAR_NODEFILE" ]; then
-    mapfile -t NODES < <(uniq "$OAR_NODEFILE")
+    nodefile  "$OAR_NODEFILE"
 fi
 
 if [ ${#NODES[*]} -lt 3 ]; then
@@ -51,6 +60,17 @@ MASK=${IP[1]}
 
 SERVER=$(host "${NODES[0]}" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
 FRONTEND=$(host "${NODES[1]}" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
+
+cat <<EOF
+Setup OAR cluster on:
+- SERVER: ${NODES[0]} ($SERVER)
+- FRONTEND: ${NODES[1]} ($FRONTEND)
+- NODES: ${NODES[*]:2}
+- PREFIX/MASK: ${IP[0]}/${IP[1]}
+
+Starting in 2 secs... (hit Ctrl-C now to stop!)
+EOF
+sleep 2
 
 prepare() {
     ssh root@"$1" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
