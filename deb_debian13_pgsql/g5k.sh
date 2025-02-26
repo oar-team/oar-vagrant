@@ -9,17 +9,19 @@
 # or if OARNODE_FILE exists, just
 # $ ./g5k.sh
 
+CMD=$0
+
 set -e
 usage() {
 	cat <<EOF
 Usage:
-  $0 <SERVER> <FRONTEND> <NODE> [<NODE> ...]
+  ${CMD##*/} <SERVER> <FRONTEND> <NODE> [<NODE> ...]
 hostnames of server, frontend and nodes are provided in command line.
 
-  $0 <FILE>
+  ${CMD##*/} <FILE>
 hostnames of server, frontend and nodes are provided in FILE (1 per line)
-
-  $0
+  
+  ${CMD##*/}
 hostnames of server, frontend and nodes are provided in $OAR_NODEFILE.
 
 EOF
@@ -43,7 +45,6 @@ if [ ${#NODES[*]} -lt 3 ]; then
     exit 1
 fi
 
-
 mapfile -t IP < <(ip r | sed -ne 's/^\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)\.[[:digit:]]\+\/\([[:digit:]]\+\)\s.*$/\1 \2/p')
 PREFIX=${IP[0]}
 MASK=${IP[1]}
@@ -51,32 +52,30 @@ MASK=${IP[1]}
 SERVER=$(host "${NODES[0]}" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
 FRONTEND=$(host "${NODES[1]}" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
 
+prepare() {
+    ssh root@"$1" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
+    scp ~/.ssh/id_rsa* root@"$1":.ssh/
+    ssh root@"$1" 'apt-get update && apt-get -y install apt iptables jq rsync bash-completion vim-nox hwloc-nox' &
+    rsync -avz ${CMD%/*}/. root@"$1":/vagrant
+}
+
 server() {
-    ssh root@"$SERVER" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
-    scp ~/.ssh/id_rsa* root@"$SERVER":.ssh/
-    ssh root@"$SERVER" 'apt-get update && apt-get -y install apt iptables jq rsync bash-completion vim-nox hwloc-nox'
-    rsync -avz . root@"$SERVER":/vagrant
     ssh root@"$SERVER" /vagrant/provision.sh server "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
     printf "%s\n" "${NODES[@]:2}" | ssh root@"$SERVER" 'cat > /tmp/nodes'
 }
 
 frontend() {
-    ssh root@"$FRONTEND" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
-    scp ~/.ssh/id_rsa* root@"$FRONTEND":.ssh/
-    ssh root@"$FRONTEND" 'apt-get update && apt-get -y install apt bash-completion vim-nox hwloc-nox'
-    rsync -avz . root@"$FRONTEND":/vagrant
     ssh root@"$FRONTEND" /vagrant/provision.sh frontend "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
 }
 
 node() {
-    local n
-    n=$(host "$1" | sed -ne 's/^.*\s\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\1/p')
-    ssh root@"$n" "echo -e 'host *\nStrictHostKeyChecking no' > ~/.ssh/config"
-    scp ~/.ssh/id_rsa* root@"$n":.ssh/
-    ssh root@"$n" 'apt-get update && apt-get -y install apt bash-completion vim-nox hwloc-nox'
-    rsync -avz . root@"$n":/vagrant
-    ssh root@"$n" /vagrant/provision.sh nodes "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
+    ssh root@"$1" /vagrant/provision.sh nodes "$PREFIX" "$MASK" "$SERVER" "$FRONTEND" no 0 oar-ftp.imag.fr sid_beta
 }
+
+for n in "${NODES[@]}"; do
+    prepare $n | sed "s/^/[PREPARE:$n] /" &
+done
+wait
 
 server | sed "s/^/[SERVER:${NODES[0]}] /"
 frontend | sed "s/^/[FRONTEND:${NODES[1]}] /"
