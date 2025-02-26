@@ -35,9 +35,9 @@ fi
 if [ $# -ge 3 ]; then
     NODES=( "$@" )
 elif [ -n "$1" ] && [ -r "$1" ]; then
-    mapfile -t NODES < <(sort -u "$1")
+    mapfile -t NODES < <(uniq "$1")
 elif [ -n "$OAR_NODEFILE" ]; then
-    mapfile -t NODES < <(sort -u "$OAR_NODEFILE")
+    mapfile -t NODES < <(uniq "$OAR_NODEFILE")
 fi
 
 if [ ${#NODES[*]} -lt 3 ]; then
