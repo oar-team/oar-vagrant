@@ -54,7 +54,7 @@ if [ ${#NODES[*]} -lt 3 ]; then
     exit 1
 fi
 
-mapfile -t IP < <(ip r | sed -ne 's/^\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)\.[[:digit:]]\+\/\([[:digit:]]\+\)\s.*$/\1 \2/p')
+mapfile -t IP < <(ip r | sed -ne 's/^\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)\.[[:digit:]]\+\/\([[:digit:]]\+\)\s.*$/\1\n\2/p')
 PREFIX=${IP[0]}
 MASK=${IP[1]}
 
