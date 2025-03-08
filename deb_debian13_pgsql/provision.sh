@@ -277,7 +277,7 @@ EOF
       echo -ne "##\n## $stamp\n##\n" ; set -x
       apt-get install -y nfs-kernel-server
       cat <<EOF > /etc/exports
-/homenfs/ ${NETWORK_PREFIX}.0/${NETWORK_MASK} (rw,no_subtree_check)
+/homenfs/ ${NETWORK_PREFIX}.0/${NETWORK_MASK}(rw,no_subtree_check)
 EOF
       service nfs-kernel-server restart
       exportfs -rv
