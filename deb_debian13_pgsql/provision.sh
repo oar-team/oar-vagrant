@@ -456,7 +456,9 @@ stamp="Apply patched files"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
   if [ -d /vagrant/patch ]; then
-    find /vagrant/patch/ -type f -exec bash -c 'f="$1"; if [ -e ${f#/vagrant/patch} ]; then ln -sfv $f ${f#/vagrant/patch}; fi' shell {} \;
+    for dd in '/all' "/$BOX"; do
+      [ -d "/vagrant/patch$dd/" ] && find "/vagrant/patch$dd/" -type f -exec bash -c 'f="$2"; if [ -e ${f#/vagrant/patch$1} ]; then mv ${f#/vagrant/patch$1}{,.orig} ; ln -sfv $f ${f#/vagrant/patch$1}; fi' shell "$dd" {} \;
+    done
   fi
   touch /tmp/stamp.${stamp// /_}
 )
