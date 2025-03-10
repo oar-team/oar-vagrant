@@ -1,0 +1,64 @@
+=head1 NAME
+
+pam_oar_adopt - OAR's pam_exec script to manage ssh connections to OAR nodes
+
+=head1 SYNOPSIS
+
+B<pam_oar_adopt -a> for PAM account
+
+B<pam_oar_adopt -s> for PAM session
+
+=head1 DESCRIPTION
+
+This script is part of the OAR resources and jobs manager software.
+
+PAM can be configured to let users B<ssh> (basic ssh, not via B<oarsh>) to OAR nodes and place the created processes in the job's cgroup. It will also prevent any ssh connection to nodes that are not properly reserved.
+
+This uses the B<pam_exec> module with the B<pam_oar_adopt> script and the B<pam_env> module.
+
+Once enabled, if a user has reserved a node and then connects to it using ssh, PAM will find out the job's B<cgroup> and place the ssh remote process in it. It will also load the job's environment variables.
+
+If a user tries to ssh to a node that is either not reserved, or not reserved in full (all compute resources of the node must be reserved) or reserved multiple times (e.g. 2 different jobs reserving each a subset of the node's compute resources, or using the timesharing job type), the connection will fail.
+
+Please note that while using ssh is very convenient, B<oarsh> provides extra features to connect to jobs.
+
+=head1 CONFIGURATION
+
+To B<enable> this feature, one must configure B<pam_oar_adopt> in PAM and make sure the B</etc/oar/pam_oar_adopt_enabled> file exists on nodes. Removing this file allows one to disable B<pam_oar_adopt> (let I<ssh> return to its normal behavior) without requiring to undo the whole PAM configuration.
+
+Also make sure the B<ssh> service (on port 22, not OAR's dedicated ssh service on port 6667) enables PAM. B</etc/ssh/sshd_config> must contain:
+
+ UsePAM yes
+
+Follows an example of configuration of PAM with B<pam_oar_adopt>:
+
+=over
+
+=item B</etc/pam.d/common-account>
+
+The following can be set as the first PAM directive in common-account:
+
+ account required      pam_exec.so quiet debug stdout /usr/sbin/pam_oar_adopt -a
+
+=item B</etc/pam.d/common-session> and B</etc/pam.d/common-session-noninteractive>
+
+The following can be set as the last PAM directives in common-session and common-session-noninteractive:
+
+ session required   pam_exec.so stdout /usr/sbin/pam_oar_adopt -s
+ session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
+
+=back
+
+=head1 NOTES
+
+It is a good practice to prevent users to connect to OAR nodes outside of jobs (except system users: at least root and the B<oar> user).
+
+Configuring B<pam_oar_adopt> does it, but it can also be enforced using B<pam_access> or the AllowedUsers directive in B</etc/ssh/sshd_config>.
+
+=head1 SEE ALSO
+
+pam(7), pam.conf(5), pam.d(5), pam_exec(8), pam_env(7), pam_access(8), ssh(1), sshd_config(5), oarsh(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2025 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
