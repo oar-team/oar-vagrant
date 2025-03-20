@@ -143,7 +143,7 @@ stamp="update system"
 stamp="install common packages"
 [ -e /tmp/stamp.${stamp// /_} ] || (
   echo -ne "##\n## $stamp\n##\n" ; set -x
-  apt-get install -y rsync
+  apt-get install -y rsync jq
   touch /tmp/stamp.${stamp// /_}
 )
 
