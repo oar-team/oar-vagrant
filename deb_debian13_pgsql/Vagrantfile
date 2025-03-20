@@ -6,7 +6,8 @@ VAGRANTFILE_API_VERSION = "2"
 
 # IP Network to use:
 NETWORK_PREFIX = ENV["OARVAGRANT_NETWORK_PREFIX"] || "192.168.41"
-NETWORK_MASK = ENV["OARVAGRANT_NETWORK_MASK"] || "255.255.255.0"
+NETWORK_MASK = ENV["OARVAGRANT_NETWORK_MASK"] || "24"
+NETWORK_MASK_CIDR = IPAddr.new('255.255.255.255').mask(NETWORK_MASK).to_s
 NETWORK_SERVER_IP = ENV["OARVAGRANT_NETWORK_SERVER_IP"] || "#{NETWORK_PREFIX}.3"
 NETWORK_FRONTEND_IP = ENV["OARVAGRANT_NETWORK_SERVER_IP"] || "#{NETWORK_PREFIX}.4"
 NETWORK_BRIDGE = ENV["OARVAGRANT_NETWORK_BRIDGE"]
@@ -54,7 +55,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     if NETWORK_BRIDGE
       m.vm.network :public_network, bridge: "#{NETWORK_BRIDGE}", ip: "#{NETWORK_SERVER_IP}", netmask: "#{NETWORK_MASK}"
     else
-      m.vm.network :private_network, ip: "#{NETWORK_SERVER_IP}", netmask: "#{NETWORK_MASK}"
+      m.vm.network :private_network, ip: "#{NETWORK_SERVER_IP}", netmask: "#{NETWORK_MASK_CIDR}"
     end
     m.ssh.forward_agent = true
     m.vm.provision :shell, path: "provision.sh", args: "server #{NETWORK_PREFIX} #{NETWORK_MASK} #{NETWORK_SERVER_IP} #{NETWORK_FRONTEND_IP} #{NETWORK_BRIDGE.nil? ? "no" : "yes"} #{NODES_COUNT} #{OAR_FTP_HOST} \"#{OAR_FTP_DISTRIB}\" \"#{DEBIAN_EXTRA_DISTRIB}\"", privileged: true
@@ -62,9 +63,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "frontend", primary: true do |m|
     m.vm.hostname = "frontend"
     if NETWORK_BRIDGE
-      m.vm.network :public_network, bridge: "#{NETWORK_BRIDGE}", ip: "#{NETWORK_FRONTEND_IP}", netmask: "#{NETWORK_MASK}"
+      m.vm.network :public_network, bridge: "#{NETWORK_BRIDGE}", ip: "#{NETWORK_FRONTEND_IP}", netmask: "#{NETWORK_MASK_CIDR}"
     else
-      m.vm.network :private_network, ip: "#{NETWORK_FRONTEND_IP}", netmask: "#{NETWORK_MASK}"
+      m.vm.network :private_network, ip: "#{NETWORK_FRONTEND_IP}", netmask: "#{NETWORK_MASK_CIDR}"
     end
     m.ssh.forward_agent = true
     m.vm.provision :shell, path: "provision.sh", args: "frontend #{NETWORK_PREFIX} #{NETWORK_MASK} #{NETWORK_SERVER_IP} #{NETWORK_FRONTEND_IP} #{NETWORK_BRIDGE.nil? ? "no" : "yes"} #{NODES_COUNT} #{OAR_FTP_HOST} \"#{OAR_FTP_DISTRIB}\" \"#{DEBIAN_EXTRA_DISTRIB}\"", privileged: true
@@ -73,9 +74,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.define "node-#{i}" do |m|
       m.vm.hostname = "node-#{i}"
       if NETWORK_BRIDGE
-        m.vm.network :public_network, bridge: "#{NETWORK_BRIDGE}", ip: "#{NETWORK_PREFIX}.#{i+10}", netmask: "#{NETWORK_MASK}"
+        m.vm.network :public_network, bridge: "#{NETWORK_BRIDGE}", ip: "#{NETWORK_PREFIX}.#{i+10}", netmask: "#{NETWORK_MASK_CIDR}"
       else
-        m.vm.network :private_network, ip: "#{NETWORK_PREFIX}.#{i+10}", netmask: "#{NETWORK_MASK}"
+        m.vm.network :private_network, ip: "#{NETWORK_PREFIX}.#{i+10}", netmask: "#{NETWORK_MASK_CIDR}"
       end
       m.ssh.forward_agent = true
       m.vm.provision :shell, path: "provision.sh", args: "nodes #{NETWORK_PREFIX} #{NETWORK_MASK} #{NETWORK_SERVER_IP} #{NETWORK_FRONTEND_IP} #{NETWORK_BRIDGE.nil? ? "no" : "yes"} #{NODES_COUNT} #{OAR_FTP_HOST} \"#{OAR_FTP_DISTRIB}\" \"#{DEBIAN_EXTRA_DISTRIB}\"", privileged: true
